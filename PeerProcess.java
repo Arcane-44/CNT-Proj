@@ -1,5 +1,7 @@
 import java.util.Hashtable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.net.*;
 import PeerInfo;                                     //IDK how importing local files works
 
 
@@ -20,7 +22,9 @@ public class PeerProcess {
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
 
     //maps peerIDs to boolean representing whether they are choking this process.
-    private HashMap<Integer, Boolean> chokeList;
+    private HashMap<Integer, Boolean> chokedByList;
+
+    private ArrayList<Integer> chokedPeersList;
 
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
     private HashMap<Integer, Boolean> wantMe;
@@ -28,12 +32,19 @@ public class PeerProcess {
     //stores the bitmaps of peers (and self)
     private HashMap<Integer, Integer> peerHas;
 
+    //stores ports for peers
+    private HashMap<Integer, Integer> peerPort;
+
+    //stores all peer info
+    private static ArrayList<PeerInfo> peerInfo;
+
+    //Map peer ID to PeerConnection object
+    private HashMap<Integer, PeerConnection> connections;
+
 
 
     /**************** Files and initialization ******************/
     private void readPeerInfo() {
-        ArrayList<PeerInfo> peers;
-
 
         //Get peer info from PeerInfo.cfg file
         //just send line into PeerInfo constructor
@@ -42,9 +53,9 @@ public class PeerProcess {
 
         boolean validID = false;
         //Initialize chokeList, wantMe, peerHas by iterating through peers
-        for( PeerInfo peer : peers ) {
+        for( PeerInfo peer : peerInfo ) {
             if( peerID != peer.peerID() ) {
-                chokeList.put( peer.peerID(), true );    //initially choked by all peers
+                chokedByList.put( peer.peerID(), true );    //initially choked by all peers
                 wantMe.put( peer.peerID(), false );    //initially unwanted by all peers
             }
             else
@@ -62,19 +73,24 @@ public class PeerProcess {
         }
     };
 
+    public void connectToPeers() {
+
+    }
+
     
     public static void main(String[] args) {
 
         //Should have exactly one arg
         if(args.length != 1) {
             //Return error
-
         }
 
         //Sets peer ID to the arg from command line
-        setPeerID(args[0]);
+        setPeerID( Integer.parseInt(args[0]) );
 
         //read PeerInfo.cfg using appropriate method
+
+
     }
 
 }
