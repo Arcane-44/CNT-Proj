@@ -44,7 +44,10 @@ public class PeerProcess {
     //Map peer ID to PeerConnection object
     private HashMap<Integer, PeerConnection> connections;
 
+    private void communicate() {
+        //read messages then respond/update info
 
+    }
 
     /**************** Files and initialization ******************/
     private void readPeerInfo() {
@@ -52,7 +55,7 @@ public class PeerProcess {
         boolean validID = false;
         //Initialize chokeList, wantMe, peerHas by iterating through peers
         for( PeerInfo peer : peerInfo ) {
-            if( peerID != peer.peerID() ) {
+            if( myID != peer.peerID() ) {
                 chokedByList.put( peer.peerID(), true );    //initially choked by all peers
                 wantMe.put( peer.peerID(), false );    //initially unwanted by all peers
                 chokedPeersList.put( peer.peerID(), true ); //initially chokes all peers
