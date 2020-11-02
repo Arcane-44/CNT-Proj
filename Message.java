@@ -2,11 +2,15 @@
 import java.lang.*;
 
 public class Message {
-    private int isHandshake(byte[] msg) {
+    private static int isHandshake(byte[] msg) {
 
     }
 
     public int handshake = null;
+
+    private byte type;
+
+    private byte[] payload;
 
     public Message(byte[] msg) {
         handshake = isHandshake(msg);

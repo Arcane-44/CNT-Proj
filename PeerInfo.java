@@ -4,10 +4,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 public class PeerInfo {
-    //Store all peers in an array list
-    ArrayList<PeerInfo> all_peers=new ArrayList<PeerInfo>();
 
-    
     //peer ID attribute
     private int peerID;
     public int peerID() {return peerID;};
@@ -28,24 +25,30 @@ public class PeerInfo {
     public boolean hasFile() {return hasFile;};
 
 
-    public PeerInfo() {
+    public static ArrayList<PeerInfo> readPeerInfo(String filename) {
         //parse line here
-        try {
-            File info = new File("./PeerInfo.cfg");
+        try { 
+                //Store all peers in an array list
+            ArrayList<PeerInfo> all_peers=new ArrayList<PeerInfo>();
+
+            File info = new File(filename);
             Scanner reader = new Scanner(info);
+
             while(reader.hasNextLine()){
-                String line=reader.nextLine();
-                String[] contents=line.split("");
+                String line = reader.nextLine();
+                String[] contents = line.split("");
                 PeerInfo peer = new PeerInfo();
-                peer.peerID=Integer.parseInt(contents[0]);
-                peer.hostName=contents[1];
-                peer.port=Integer.parseInt(contents[2]);
-                peer.hasFile=(Integer.parseInt(contents[3])==1)?true:false;
-                this.all_peers.add(peer);
+                peer.peerID = Integer.parseInt(contents[0]);
+                peer.hostName = contents[1];
+                peer.port = Integer.parseInt(contents[2]);
+                peer.hasFile = (Integer.parseInt(contents[3])==1)?true:false;
+                all_peers.add(peer);
             }
 
         }catch (FileNotFoundException e) {
             System.out.println("Error occured");
         }
+        
+        return all_peers;
     }
 }

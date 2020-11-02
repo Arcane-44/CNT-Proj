@@ -10,13 +10,13 @@ public class PeerProcess {
     /**************************** WORKING DIRECTORY (very important) ****************************/
     private static String workingDir;
 
-    private static String commonInfoFileName;
-    private static String peerInfoFileName;
+    private static String commonInfoFileName = "./CommonInfo.cfg";
+    private static String peerInfoFileName = "./PeerInfo.cfg";
 
 
     //Peer ID of machine running this peer process
-    private int peerID;
-    private int setPeerID(int id) {peerID = id;};
+    private int myID;
+    private int setID(int id) { return myID = id; };
 
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
@@ -35,8 +35,11 @@ public class PeerProcess {
     //stores ports for peers
     private HashMap<Integer, Integer> peerPort;
 
+    //stores hostnames for peers
+    private HashMap<Integer, String> peerhost;
+
     //stores all peer info
-    private static ArrayList<PeerInfo> peerInfo;
+    private static ArrayList<PeerInfo> peerInfo = PeerInfo.readPeerInfo(peerInfoFileName);
 
     //Map peer ID to PeerConnection object
     private HashMap<Integer, PeerConnection> connections;
@@ -46,25 +49,25 @@ public class PeerProcess {
     /**************** Files and initialization ******************/
     private void readPeerInfo() {
 
-        //Get peer info from PeerInfo.cfg file
-        //just send line into PeerInfo constructor
-        //for/while( ... )
-
-
         boolean validID = false;
         //Initialize chokeList, wantMe, peerHas by iterating through peers
         for( PeerInfo peer : peerInfo ) {
             if( peerID != peer.peerID() ) {
                 chokedByList.put( peer.peerID(), true );    //initially choked by all peers
                 wantMe.put( peer.peerID(), false );    //initially unwanted by all peers
+                chokedPeersList.put( peer.peerID(), true ); //initially chokes all peers
             }
             else
                 validID = true;
 
             if( peer.hasFile() )
-                peerHas.put( peer.peerID(), 1);             //TODO: NEED TO CHANGE SHOULD BE ALL ONES
+                peerHas.put( peer.peerID(), 0xffffffff);
             else
                 peerHas.put( peer.peerID(), 0);
+
+            peerPort.put(peer.peerID(), peer.port() );
+
+            peerHost.put(peer.peerID(), peer.hostName() );
 
         }
 
@@ -80,13 +83,15 @@ public class PeerProcess {
     
     public static void main(String[] args) {
 
+        PeerProcess me = new PeerProcess();
+
         //Should have exactly one arg
         if(args.length != 1) {
             //Return error
         }
 
-        //Sets peer ID to the arg from command line
-        setPeerID( Integer.parseInt(args[0]) );
+        //Sets my peer ID to the arg from command line
+        me.setID( Integer.parseInt(args[0]) );
 
         //read PeerInfo.cfg using appropriate method
 
