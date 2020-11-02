@@ -2,7 +2,7 @@ import java.util.Hashtable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.net.*;
-import PeerInfo;                                     //IDK how importing local files works
+//import PeerInfo;                                     //IDK how importing local files works
 
 
 public class PeerProcess {
@@ -16,7 +16,7 @@ public class PeerProcess {
 
     //Peer ID of machine running this peer process
     private int peerID;
-    private setPeerID(int id) {peerID = id;};
+    private int setPeerID(int id) {peerID = id;};
 
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
