@@ -8,25 +8,45 @@ import java.io.*;
 abstract class Connection extends Thread{
     protected Socket connection;
     
-    public boolean usable = false;
+    protected boolean usable = false;
+    public boolean usable() { return usable; }
 
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
 
     abstract public void shutdown();
 
-    public void sendMessage(String message) {
-
+    public void sendMessage(byte[] message) {
+        try {
+            out.writeObject(message);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
+    public byte[] readMessage() {
+        byte[] ret;
+        try {
+            ret = (byte[]) (in.readObject() );
+        }
+        catch (EOFException e) {
+            ret = null;
+        }
+
+        return ret;
+    }
+
 }
 
 public class PeerConnection {
-    private int myID;
 
     private Connection con;
 
-    public void sendMessage(String message) {
-        
+    public boolean usable() { return con.usable(); }
+
+    public void sendMessage(byte[] message) {
+        con.sendMessage(message);
     }
 
     public void shutdown() {
@@ -97,7 +117,7 @@ public class PeerConnection {
 
                 System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");
             }catch (IOException e){
-
+                e.printStackTrace();
             }
         }
     }
@@ -111,7 +131,7 @@ public class PeerConnection {
                 connection.bind(new InetSocketAddress(myAddr, myPort));
                 goalSocket = new InetSocketAddress(peerAddr, peerPort);
             }catch (IOException e){
-
+                e.printStackTrace();
             }
         }
 
@@ -120,7 +140,7 @@ public class PeerConnection {
                 connection.close();
                 usable = false;
             }catch (IOException e){
-
+                e.printStackTrace();
             }
         }
 
@@ -137,7 +157,7 @@ public class PeerConnection {
 
                         usable = true;
                     }catch (IOException e){
-
+                        e.printStackTrace();
                     }
                 }
 

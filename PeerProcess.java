@@ -1,6 +1,7 @@
 import java.util.Hashtable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.io.FileInputStream;
 import java.net.*;
 //import PeerInfo;                                     //IDK how importing local files works
 
@@ -12,7 +13,7 @@ public class PeerProcess {
 
     private static String commonInfoFileName = "./CommonInfo.cfg";
     private static String peerInfoFileName = "./PeerInfo.cfg";
-
+    private static String fileName = "";
 
     //Peer ID of machine running this peer process
     private int myID;
@@ -20,6 +21,9 @@ public class PeerProcess {
 
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
+    
+    private byte[][] piecedData = new byte[ commonInfo.numPieces() ] [commonInfo.pieceSize()];
+
 
     //maps peerIDs to boolean representing whether they are choking this process.
     private HashMap<Integer, Boolean> chokedByList;
@@ -77,6 +81,24 @@ public class PeerProcess {
         if(!validID) {
             //ERROR
         }
+
+        if( peerHas(myID) ) {
+
+            FileInputStream file = new FileInputStream(fileName);
+
+            byte[] fileData = new byte[ commonInfo.fileSize() ];
+
+            file.read(filedata, 0, commonInfo.fileSize() );
+
+            //put file into piecedData array as pieces
+            for (int i = 0; i < commonInfo.numPieces(); i++) {
+
+                int offset = i*commonInfo.pieceSize();
+
+                System.arraycopy(fileData, offset, piecedData[i], 0, min(commonInfo.pieceSize(), commonInfo.fileSize() - offset ) );
+            }
+
+        }
     };
 
     public void connectToPeers() {
@@ -97,7 +119,7 @@ public class PeerProcess {
         me.setID( Integer.parseInt(args[0]) );
 
         //read PeerInfo.cfg using appropriate method
-
+        me.readPeerInfo();
 
     }
 
