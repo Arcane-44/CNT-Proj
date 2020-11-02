@@ -72,6 +72,7 @@ public class CommonInfo {
 
         }catch(FileNotFoundException e) {
             System.out.println("Error occured");
+            e.printStackTrace();
 
         }
 

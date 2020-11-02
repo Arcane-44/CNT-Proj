@@ -18,6 +18,8 @@ public class Message {
 
     public int handshake = null;
 
+    private int len;
+
     private byte type;
 
     private byte[] payload;

@@ -27,9 +27,8 @@ public class PeerInfo {
 
     public static ArrayList<PeerInfo> readPeerInfo(String filename) {
         //parse line here
-        try { 
-                //Store all peers in an array list
-            ArrayList<PeerInfo> all_peers=new ArrayList<PeerInfo>();
+        ArrayList<PeerInfo> all_peers=new ArrayList<PeerInfo>();
+        try {
 
             File info = new File(filename);
             Scanner reader = new Scanner(info);
@@ -47,6 +46,7 @@ public class PeerInfo {
 
         }catch (FileNotFoundException e) {
             System.out.println("Error occured");
+            e.printStackTrace();
         }
         
         return all_peers;

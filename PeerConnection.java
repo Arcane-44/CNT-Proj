@@ -30,7 +30,7 @@ abstract class Connection extends Thread{
         try {
             ret = (byte[]) (in.readObject() );
         }
-        catch (EOFException e) {
+        catch (Exception e) {
             ret = null;
         }
 
@@ -53,8 +53,7 @@ public class PeerConnection {
         con.shutdown();
     }
 
-    public PeerConnection( int myID, String myAddr, int myPort, String peerAddr, int peerPort, boolean isUp) {
-        this.myID = myID;
+    public PeerConnection( String myAddr, int myPort, String peerAddr, int peerPort, boolean isUp) {
 
         if(isUp) {
             con = new ConnectUp(myPort, peerAddr, peerPort);

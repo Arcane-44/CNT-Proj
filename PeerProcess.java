@@ -2,7 +2,10 @@ import java.util.Hashtable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.*;
+import java.lang.Integer;
+import java.lang.Math;
 //import PeerInfo;                                     //IDK how importing local files works
 
 
@@ -11,7 +14,7 @@ public class PeerProcess {
     /**************************** WORKING DIRECTORY (very important) ****************************/
     private static String workingDir;
 
-    private static String commonInfoFileName = "./CommonInfo.cfg";
+    private static String commonInfoFileName = "./Common.cfg";
     private static String peerInfoFileName = "./PeerInfo.cfg";
     private static String fileName = "";
 
@@ -26,27 +29,29 @@ public class PeerProcess {
 
 
     //maps peerIDs to boolean representing whether they are choking this process.
-    private HashMap<Integer, Boolean> chokedByList;
+    private HashMap<Integer, Boolean> chokedByList = new HashMap<>();
 
     private ArrayList<Integer> chokedPeersList;
 
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
-    private HashMap<Integer, Boolean> wantMe;
+    private HashMap<Integer, Boolean> wantMe = new HashMap<>();
 
     //stores the bitmaps of peers (and self)
-    private HashMap<Integer, Integer> peerHas;
+    private HashMap<Integer, Integer> peerHas = new HashMap<>();
 
     //stores ports for peers
-    private HashMap<Integer, Integer> peerPort;
+    private HashMap<Integer, Integer> peerPort = new HashMap<>();
 
     //stores hostnames for peers
-    private HashMap<Integer, String> peerhost;
+    private HashMap<Integer, String> peerHost = new HashMap<>();
 
     //stores all peer info
     private static ArrayList<PeerInfo> peerInfo = PeerInfo.readPeerInfo(peerInfoFileName);
 
+    private ArrayList<Integer> peerIDs = new ArrayList<>();
+
     //Map peer ID to PeerConnection object
-    private HashMap<Integer, PeerConnection> connections;
+    private HashMap<Integer, PeerConnection> connections = new HashMap<>();
 
     private void communicate() {
         //read messages then respond/update info
@@ -60,21 +65,22 @@ public class PeerProcess {
         //Initialize chokeList, wantMe, peerHas by iterating through peers
         for( PeerInfo peer : peerInfo ) {
             if( myID != peer.peerID() ) {
-                chokedByList.put( peer.peerID(), true );    //initially choked by all peers
-                wantMe.put( peer.peerID(), false );    //initially unwanted by all peers
-                chokedPeersList.put( peer.peerID(), true ); //initially chokes all peers
+                chokedByList.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(true) );    //initially choked by all peers
+                wantMe.put( Integer.valueOf(peer.peerID()) , Boolean.valueOf(false) );    //initially unwanted by all peers
             }
             else
                 validID = true;
 
             if( peer.hasFile() )
-                peerHas.put( peer.peerID(), 0xffffffff);
+                peerHas.put( Integer.valueOf(peer.peerID()) , Integer.valueOf(0xffffffff) );
             else
-                peerHas.put( peer.peerID(), 0);
+                peerHas.put( Integer.valueOf(peer.peerID()), Integer.valueOf(0) );
 
-            peerPort.put(peer.peerID(), peer.port() );
+            peerPort.put(Integer.valueOf(peer.peerID()), Integer.valueOf(peer.port() ) );
 
-            peerHost.put(peer.peerID(), peer.hostName() );
+            peerHost.put(Integer.valueOf(peer.peerID() ), peer.hostName() );
+
+            peerIDs.add( Integer.valueOf(peer.peerID() ) );
 
         }
 
@@ -82,26 +88,64 @@ public class PeerProcess {
             //ERROR
         }
 
-        if( peerHas(myID) ) {
+        if( peerHas.get( Integer.valueOf(myID) ) != 0 ) {
+            try {
 
-            FileInputStream file = new FileInputStream(fileName);
+                FileInputStream file = new FileInputStream(fileName);
 
-            byte[] fileData = new byte[ commonInfo.fileSize() ];
+                byte[] fileData = new byte[ commonInfo.fileSize() ];
 
-            file.read(filedata, 0, commonInfo.fileSize() );
+                file.read(fileData, 0, commonInfo.fileSize() );
 
-            //put file into piecedData array as pieces
-            for (int i = 0; i < commonInfo.numPieces(); i++) {
+                file.close();
 
-                int offset = i*commonInfo.pieceSize();
+                //put file into piecedData array as pieces
+                for (int i = 0; i < commonInfo.numPieces(); i++) {
 
-                System.arraycopy(fileData, offset, piecedData[i], 0, min(commonInfo.pieceSize(), commonInfo.fileSize() - offset ) );
+                    int offset = i*commonInfo.pieceSize();
+
+                    System.arraycopy(fileData, offset, piecedData[i], 0, Math.min(commonInfo.pieceSize(), commonInfo.fileSize() - offset ) );
+                }
+
+            }
+            catch(Exception e) {
+                e.printStackTrace();
             }
 
         }
     };
 
+    public void shutdown() {
+        for( Integer id : peerIDs ) {
+            if( id.intValue() != myID )
+                connections.get(id).shutdown();
+        }
+    }
+
     public void connectToPeers() {
+        System.out.println("Connecting...");
+
+        for ( int id : peerIDs ) {
+            if( id != myID ) {
+                connections.put( Integer.valueOf(id) , 
+                            new PeerConnection( peerHost.get( Integer.valueOf(myID) ), peerPort.get( Integer.valueOf(myID) ), peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), (id > myID) ) );
+            }
+        }
+        boolean connected = false;
+
+        while(!connected) {
+            connected = true;
+
+            for( int id : peerIDs ) {
+
+                if( (id != myID) && (!connections.get( Integer.valueOf(id) ).usable() ) )
+                        connected = false;
+
+            }
+
+        }
+
+        System.out.println("Connected to all peers!");
 
     }
 
@@ -120,6 +164,10 @@ public class PeerProcess {
 
         //read PeerInfo.cfg using appropriate method
         me.readPeerInfo();
+
+        me.connectToPeers();
+
+        me.shutdown();
 
     }
 
