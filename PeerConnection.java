@@ -1,7 +1,9 @@
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.*;
+import java.io.*;
 
 abstract class Connection extends Thread{
     protected Socket connection;
@@ -51,35 +53,52 @@ public class PeerConnection {
         private ServerSocket server;
 
         public ConnectUp(int myPort, String peerAddr, int peerPort) {
-            server = new ServerSocket(myPort);
-            goalAddr = InetAddress.getByName(peerAddr);
-            goalPort = peerPort;
+            try {
+                server = new ServerSocket(myPort);
+                goalAddr = InetAddress.getByName(peerAddr);
+                goalPort = peerPort;
+            }catch (IOException e){
+                System.out.println("Connection failed");
+            }
         }
 
         public void shutdown() {
-            connection.close();
-            server.close();
-            usable = false;
+            try {
+                connection.close();
+                server.close();
+                usable = false;
+            }catch (IOException e){
+                System.out.println("Connection wasn't sucessfully closed");
+            }
         }
 
         public void run() {
 
             do {
-                connection = server.accept();
-                if( (connection.getInetAddress() != goalAddr) || (connection.getPort() != goalPort ) ) {
-                    connection.close();
-                    server.close();
+                try {
+                    connection = server.accept();
+                    if ((connection.getInetAddress() != goalAddr) || (connection.getPort() != goalPort)) {
+                        connection.close();
+                        server.close();
+                    }
+                }catch (IOException e){
+                    System.out.println("Failed");
                 }
             }
             while( connection.isClosed() );
 
-            out = new ObjectOutputStream( connection.getOutputStream() );
+            try {
 
-            in = new ObjectInputStream( connection.getInputStream() );
+                out = new ObjectOutputStream(connection.getOutputStream());
 
-            usable = true;
+                in = new ObjectInputStream(connection.getInputStream());
 
-            System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");
+                usable = true;
+
+                System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");
+            }catch (IOException e){
+
+            }
         }
     }
 
@@ -87,27 +106,39 @@ public class PeerConnection {
         private InetSocketAddress goalSocket;
 
         public ConnectDown( String myAddr, int myPort, String peerAddr, int peerPort ) {
-            connection = new Socket();
-            connection.bind( new InetSocketAddress(myAddr, myPort) );
-            goalSocket = new InetSocketAddress(peerAddr, peerPort);
+            try {
+                connection = new Socket();
+                connection.bind(new InetSocketAddress(myAddr, myPort));
+                goalSocket = new InetSocketAddress(peerAddr, peerPort);
+            }catch (IOException e){
+
+            }
         }
 
         public void shutdown() {
-            connection.close();
-            usable = false;
+            try {
+                connection.close();
+                usable = false;
+            }catch (IOException e){
+
+            }
         }
 
         public void run() {
             do {
 
                 if( !connection.isConnected() ) {
-                    connection.connect(goalSocket);
+                    try {
+                        connection.connect(goalSocket);
 
-                    out = new ObjectOutputStream( connection.getOutputStream() );
+                        out = new ObjectOutputStream(connection.getOutputStream());
 
-                    in = new ObjectInputStream( connection.getInputStream() );
+                        in = new ObjectInputStream(connection.getInputStream());
 
-                    usable = true;
+                        usable = true;
+                    }catch (IOException e){
+
+                    }
                 }
 
             }

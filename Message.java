@@ -1,4 +1,5 @@
-import org.graalvm.compiler.replacements.arraycopy.ArrayCopy;
+//import org.graalvm.compiler.replacements.arraycopy.ArrayCopy;
+import java.lang.*;
 
 public class Message {
     private int isHandshake(byte[] msg) {
