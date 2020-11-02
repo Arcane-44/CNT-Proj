@@ -76,7 +76,7 @@ public class PeerConnection {
                 server = new ServerSocket(myPort);
                 goalAddr = InetAddress.getByName(peerAddr);
                 goalPort = peerPort;
-            }catch (IOException e){
+            }catch (Exception e){
                 System.out.println("Connection failed");
             }
         }
@@ -86,7 +86,7 @@ public class PeerConnection {
                 connection.close();
                 server.close();
                 usable = false;
-            }catch (IOException e){
+            }catch (Exception e){
                 System.out.println("Connection wasn't sucessfully closed");
             }
         }
@@ -100,7 +100,7 @@ public class PeerConnection {
                         connection.close();
                         server.close();
                     }
-                }catch (IOException e){
+                }catch (Exception e){
                     System.out.println("Failed");
                 }
             }
@@ -115,7 +115,7 @@ public class PeerConnection {
                 usable = true;
 
                 System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");
-            }catch (IOException e){
+            }catch (Exception e){
                 e.printStackTrace();
             }
         }
