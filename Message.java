@@ -1,5 +1,7 @@
 //import org.graalvm.compiler.replacements.arraycopy.ArrayCopy;
 import java.lang.*;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Message {
 
@@ -16,16 +18,27 @@ public class Message {
 
     }
 
-    public int handshake = null;
+    public int handshake;
 
     private int len;
 
-    private byte type;
+    private int type;
 
     private byte[] payload;
 
+    public static int convertByteArrayToInt(byte[] bytes){
+        return ByteBuffer.wrap(bytes).getInt();
+
+    }
+
+
+
     public Message(byte[] msg) {
         handshake = isHandshake(msg);
+        byte[] len_array=Arrays.copyOfRange(msg,0,3);
+        this.len=convertByteArrayToInt(len_array);
+        this.type=convertByteArrayToInt(Arrays.copyOfRange(msg,3,4));
+        this.payload=Arrays.copyOfRange(msg,4,msg.length-1);
     }
 
     public static byte[] handshake(int id) {
