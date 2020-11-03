@@ -44,6 +44,8 @@ public class PeerInfo {
                 all_peers.add(peer);
             }
 
+            reader.close();
+
         }catch (FileNotFoundException e) {
             System.out.println("Error occured");
             e.printStackTrace();
