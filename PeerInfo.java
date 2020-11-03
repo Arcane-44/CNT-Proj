@@ -8,21 +8,35 @@ public class PeerInfo {
     //peer ID attribute
     private int peerID;
     public int peerID() {return peerID;};
+    public void setPeerID(int peerID){
+        this.peerID=peerID;
+    }
 
 
     //host name attribute
     private String hostName;
     public String hostName() {return hostName;};
+    public void setHostName(String hostName){
+        this.hostName=hostName;
+
+    }
 
 
     //port attribute
     private int port;
     public int port() {return port;};
+    public void setPort(){
+        this.port=port;
+    }
 
 
     //has file attribute
     private boolean hasFile;
     public boolean hasFile() {return hasFile;};
+    public void setHasFile(boolean hasFile){
+        this.hasFile=hasFile;
+    }
+
 
 
     public static ArrayList<PeerInfo> readPeerInfo(String filename) {
