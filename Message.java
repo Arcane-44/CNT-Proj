@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class Message {
 
     private static int bytesToInt(byte[] bytes) {
-        if(byets.length != 4) {
+        if(bytes.length != 4) {
             //ERROR
         }
 
@@ -17,10 +17,10 @@ public class Message {
     }
 
     private static byte[] intToBytes(int val) {
-        byte[] bytes = {    (byte) ( (id >> 24) & 0xff ),
-                            (byte) ( (id >> 16) & 0xff ),
-                            (byte) ( (id >> 8)  & 0xff ),
-                            (byte) ( (id >> 0)  & 0xff ) };
+        byte[] bytes = {    (byte) ( (val >> 24) & 0xff ),
+                            (byte) ( (val >> 16) & 0xff ),
+                            (byte) ( (val >> 8)  & 0xff ),
+                            (byte) ( (val >> 0)  & 0xff ) };
 
         return bytes;
     }
@@ -35,6 +35,8 @@ public class Message {
     public static final byte PIECE = 7;
 
     private static int isHandshake(byte[] msg) {
+        //
+        return 0;
 
     }
 
@@ -51,13 +53,11 @@ public class Message {
 
     }
 
-
-
     public Message(byte[] msg) {
         handshake = isHandshake(msg);
         byte[] len_array=Arrays.copyOfRange(msg,0,3);
-        this.len=convertByteArrayToInt(len_array);
-        this.type=convertByteArrayToInt(Arrays.copyOfRange(msg,3,4));
+        this.len=bytesToInt(len_array);
+        this.type=bytesToInt(Arrays.copyOfRange(msg,3,4));
         this.payload=Arrays.copyOfRange(msg,4,msg.length-1);
     }
 
@@ -67,12 +67,28 @@ public class Message {
 
         System.arraycopy(header, 0, msg, 0, header.length);
 
-        Arrays.fill(msg, header.length, header.length + 10, 0);
+        Arrays.fill(msg, header.length, header.length + 10, (byte) 0);
 
-        byte[] idb = intToBytes(id)
+        byte[] idb = intToBytes(id);
 
-        Systems.arraycopy(idb, 0, msg, header.length + 10, idb.length);
+        System.arraycopy(idb, 0, msg, header.length + 10, idb.length);
 
         return msg;
     }
+    public int getType(){
+        return type;
+    }
+
+    public void setType(int type){
+        this.type=type;
+    }
+
+    public byte[] getPayload(){
+        return this.payload;
+    }
+
+    public void setPayload(byte[] payload){
+        this.payload=payload;
+    }
+
 }
