@@ -9,35 +9,61 @@ public class CommonInfo {
     private int numPrefNeighbors;
     public int numPrefNeighbors() { return numPrefNeighbors; }
 
+    public void setNumPrefNeighbors(int numPrefNeighbors){
+        this.numPrefNeighbors=numPrefNeighbors;
+    }
+
 
     //unchoke interval and getter
     private int unchokeInterval;
     public int unchokeInterval() {  return unchokeInterval;  }
+
+    public void setUnchokeInterval(int unchokeInterval){
+        this.unchokeInterval=unchokeInterval;
+    }
 
 
     //optimistic unchoke interval and getter
     private int optUnchokeInterval;
     public int optUnchokeInterval() {  return optUnchokeInterval;  }
 
+    public void setOptUnchokeInterval(int optUnchokeInterval){
+        this.optUnchokeInterval=optUnchokeInterval;
+    }
+
 
     //file name and getter
     private String fileName;
     public String fileName() { return fileName;  }
+
+    public void setFileName(String fileName){
+        this.fileName=fileName;
+    }
 
 
     //file size and getter
     private int fileSize;
     public int fileSize() {   return fileSize;   }
 
+    public void setFileSize(int fileSize){
+        this.fileSize=fileSize;
+    }
+
 
     //piece size and getter
     private int pieceSize;
     public int pieceSize() {  return pieceSize;  }
+    public void setPieceSize(int pieceSize){
+        this.pieceSize=pieceSize;
+    }
 
 
     //number of pieces and getter
     private int numPieces;
     public int numPieces() {  return numPieces;  }
+    public void setNumPieces(){
+        this.numPieces=numPieces;
+    }
 
 
     //Constructor
