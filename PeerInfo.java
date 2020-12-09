@@ -25,7 +25,7 @@ public class PeerInfo {
     //port attribute
     private int port;
     public int port() {return port;};
-    public void setPort(){
+    public void setPort(int port){
         this.port=port;
     }
 

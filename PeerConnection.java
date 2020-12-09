@@ -1,6 +1,5 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.*;
 import java.io.*;
@@ -8,13 +7,17 @@ import java.io.*;
 abstract class Connection extends Thread{
     protected Socket connection;
     
-    protected boolean usable = false;
+    private boolean usable = false;
     public boolean usable() { return usable; }
+
+    protected int peerID;
 
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
 
-    abstract public void shutdown();
+    public void shutdown() {
+        usable = false;
+    }
 
     public void sendMessage(byte[] message) {
         try {
@@ -37,9 +40,20 @@ abstract class Connection extends Thread{
         return ret;
     }
 
+    protected void waitForHandshake() {
+        byte[] msg;
+        while( !usable ) {
+            msg = readMessage();
+
+            if(Message.isHandshake(msg) == peerID) {
+                usable = true;
+            }
+        }
+    }
+
 }
 
-public class PeerConnection {
+public class PeerConnection extends Thread{
 
     private Connection con;
 
@@ -53,13 +67,13 @@ public class PeerConnection {
         con.shutdown();
     }
 
-    public PeerConnection( String myAddr, int myPort, String peerAddr, int peerPort, boolean isUp) {
+    public PeerConnection( String myAddr, int myPort, String peerAddr, int peerPort, boolean isUp, int peerID) {
 
         if(isUp) {
-            con = new ConnectUp(myPort, peerAddr, peerPort);
+            con = new ConnectUp(myPort, peerAddr, peerPort, peerID);
         }
         else {
-            con = new ConnectDown(myAddr, myPort, peerAddr, peerPort);
+            con = new ConnectDown(myAddr, myPort, peerAddr, peerPort, peerID);
         }
 
         con.start();
@@ -71,8 +85,9 @@ public class PeerConnection {
 
         private ServerSocket server;
 
-        public ConnectUp(int myPort, String peerAddr, int peerPort) {
+        public ConnectUp(int myPort, String peerAddr, int peerPort, int peerID) {
             try {
+                this.peerID = peerID;
                 server = new ServerSocket(myPort);
                 goalAddr = InetAddress.getByName(peerAddr);
                 goalPort = peerPort;
@@ -83,9 +98,9 @@ public class PeerConnection {
 
         public void shutdown() {
             try {
+                super.shutdown();
                 connection.close();
                 server.close();
-                usable = false;
             }catch (Exception e){
                 System.out.println("Connection wasn't sucessfully closed");
             }
@@ -112,7 +127,7 @@ public class PeerConnection {
 
                 in = new ObjectInputStream(connection.getInputStream());
 
-                usable = true;
+                waitForHandshake();
 
                 System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");
             }catch (Exception e){
@@ -124,8 +139,9 @@ public class PeerConnection {
     private static class ConnectDown extends Connection {
         private InetSocketAddress goalSocket;
 
-        public ConnectDown( String myAddr, int myPort, String peerAddr, int peerPort ) {
+        public ConnectDown( String myAddr, int myPort, String peerAddr, int peerPort, int peerID ) {
             try {
+                this.peerID = peerID;
                 connection = new Socket();
                 connection.bind(new InetSocketAddress(myAddr, myPort));
                 goalSocket = new InetSocketAddress(peerAddr, peerPort);
@@ -136,32 +152,29 @@ public class PeerConnection {
 
         public void shutdown() {
             try {
+                super.shutdown();
                 connection.close();
-                usable = false;
             }catch (IOException e){
                 e.printStackTrace();
             }
         }
 
         public void run() {
-            do {
 
-                if( !connection.isConnected() ) {
-                    try {
-                        connection.connect(goalSocket);
+            if( !connection.isConnected() ) {
+                 try {
+                      connection.connect(goalSocket);
 
-                        out = new ObjectOutputStream(connection.getOutputStream());
+                     out = new ObjectOutputStream(connection.getOutputStream());
 
-                        in = new ObjectInputStream(connection.getInputStream());
+                     in = new ObjectInputStream(connection.getInputStream());
 
-                        usable = true;
-                    }catch (IOException e){
-                        e.printStackTrace();
-                    }
+                }catch (IOException e){
+                    e.printStackTrace();
                 }
-
             }
-            while( !usable );
+        
+            waitForHandshake();
 
             System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");
         }

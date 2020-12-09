@@ -4,6 +4,27 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Message {
+    
+    public static final byte CHOKE = 0;
+    public static final byte UNCHOKE = 1;
+    public static final byte INTERESTED = 2;
+    public static final byte NOT_INTERESTED = 3;
+    public static final byte HAVE = 4;
+    public static final byte BITFIELD = 5;
+    public static final byte REQUEST = 6;
+    public static final byte PIECE = 7;
+
+
+    private int handshake;
+    private int len;
+    private int type;
+    private byte[] payload;
+
+    public int getHandshake(){ return handshake; }
+    public int getType(){ return type; }
+    public void setType(int type){ this.type=type; }
+    public byte[] getPayload(){ return this.payload; }
+    public void setPayload(byte[] payload){ this.payload=payload; }
 
     private static int bytesToInt(byte[] bytes) {
         if(bytes.length != 4) {
@@ -25,32 +46,9 @@ public class Message {
         return bytes;
     }
 
-    public static final byte CHOKE = 0;
-    public static final byte UNCHOKE = 1;
-    public static final byte INTERESTED = 2;
-    public static final byte NOT_INTERESTED = 3;
-    public static final byte HAVE = 4;
-    public static final byte BITFIELD = 5;
-    public static final byte REQUEST = 6;
-    public static final byte PIECE = 7;
-
-    private static int isHandshake(byte[] msg) {
+    public static int isHandshake(byte[] msg) {
         //
-        return 0;
-
-    }
-
-    public int handshake;
-
-    private int len;
-
-    private int type;
-
-    private byte[] payload;
-
-    public static int convertByteArrayToInt(byte[] bytes){
-        return ByteBuffer.wrap(bytes).getInt();
-
+        return -1;
     }
 
     public Message(byte[] msg) {
@@ -75,20 +73,90 @@ public class Message {
 
         return msg;
     }
-    public int getType(){
-        return type;
+
+    public static byte[] have(int index) {
+        byte[] ret = new byte[9];
+
+        //put message length in message: payload is 4 bytes
+        System.arraycopy(intToBytes(4), 0, ret, 0, 4);
+        //message type
+        ret[4] = HAVE;
+        //payload is index number
+        System.arraycopy(intToBytes(index), 0, ret, 5, 4);
+
+        return ret;
     }
 
-    public void setType(int type){
-        this.type=type;
+    public static byte[] choke() {
+        byte[] ret = new byte[5];
+
+        //put message length in message: payload is 0 bytes
+        System.arraycopy(intToBytes(0), 0, ret, 0, 4);
+        //message type
+        ret[4] = CHOKE;
+
+        return ret;
     }
 
-    public byte[] getPayload(){
-        return this.payload;
+    public static byte[] unchoke() {
+        byte[] ret = new byte[5];
+
+        //put message length in message: payload is 0 bytes
+        System.arraycopy(intToBytes(0), 0, ret, 0, 4);
+        //message type
+        ret[4] = UNCHOKE;
+
+        return ret;
     }
 
-    public void setPayload(byte[] payload){
-        this.payload=payload;
+    public static byte[] interested() {
+        byte[] ret = new byte[5];
+
+        //put message length in message: payload is 0 bytes
+        System.arraycopy(intToBytes(0), 0, ret, 0, 4);
+        //message type
+        ret[4] = INTERESTED;
+
+        return ret;
+    }
+
+    public static byte[] not_interested() {
+        byte[] ret = new byte[5];
+
+        //put message length in message: payload is 0 bytes
+        System.arraycopy(intToBytes(0), 0, ret, 0, 4);
+        //message type
+        ret[4] = NOT_INTERESTED;
+
+        return ret;
+    }
+
+    public static byte[] request(int index) {
+        byte[] ret = new byte[9];
+
+        //put message length in message: payload is 4 bytes
+        System.arraycopy(intToBytes(4), 0, ret, 0, 4);
+        //message type
+        ret[4] = REQUEST;
+        //payload is index number
+        System.arraycopy(intToBytes(index), 0, ret, 5, 4);
+
+        return ret;
+    }
+
+    public static byte[] piece(int index, byte[] piece) {
+        byte[] ret = new byte[9 + piece.length];
+
+        //put message length in message: payload is 4 bytes
+        System.arraycopy(intToBytes(4 + piece.length), 0, ret, 0, 4);
+        //message type
+        ret[4] = PIECE;
+        //payload has index number first
+        System.arraycopy(intToBytes(index), 0, ret, 5, 4);
+        //payload has content of piece next
+        System.arraycopy(piece, 0, ret, 9, piece.length);
+
+        return ret;
     }
 
 }

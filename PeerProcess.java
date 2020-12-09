@@ -128,18 +128,18 @@ public class PeerProcess {
         for ( int id : peerIDs ) {
             if( id != myID ) {
                 connections.put( Integer.valueOf(id) , 
-                            new PeerConnection( peerHost.get( Integer.valueOf(myID) ), peerPort.get( Integer.valueOf(myID) ), peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), (id > myID) ) );
+                            new PeerConnection( peerHost.get( Integer.valueOf(myID) ), peerPort.get( Integer.valueOf(myID) ), peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), (id > myID), id ) );
             }
         }
-        boolean connected = false;
+        boolean connected_all = false;
 
-        while(!connected) {
-            connected = true;
+        while(!connected_all) {
+            connected_all = true;
 
             for( int id : peerIDs ) {
 
                 if( (id != myID) && (!connections.get( Integer.valueOf(id) ).usable() ) )
-                        connected = false;
+                        connected_all = false;
 
             }
 
