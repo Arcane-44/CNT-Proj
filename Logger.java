@@ -9,7 +9,48 @@ public class Logger {
         return date_format.format(date);
     }
 
-    public static void log() {
+    public static void log_tcp(int myID, int peerID) {
 
     }
+
+    public static void log_preferred_neighbors(int myID, ArrayList<Integer> prefNeighbors) {
+
+    }
+    public static void log_opt_unchoked(int myID, int optUnchokedID) {
+
+    }
+
+    public static void log_unchoke(int myID, int peerID) {
+
+    }
+
+    public static void log_choke(int myID, int peerID) {
+
+    }
+
+    public static void log_have(int myID, int peerID, int pieceIndex) {
+
+    }
+
+    public static void log_interested(int myID, int peerID) {
+
+    }
+
+    public static void log_uninterested(int myID, int peerID) {
+
+    }
+
+    public static void log_download_piece(int myID, int peerID, int pieceIndex) {
+
+    }
+
+    public static void log_complete_download(int myID, int completeDownloadPeerID) {
+
+    }
+
+    public static void log_handshake(int myID, int peerID) {
+
+    }
+
+    
 }

@@ -11,6 +11,7 @@ abstract class Connection extends Thread{
     public boolean usable() { return usable; }
 
     protected int peerID;
+    protected int myID;
 
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
@@ -42,12 +43,20 @@ abstract class Connection extends Thread{
 
     protected void waitForHandshake() {
         byte[] msg;
+        int shaken_from;
         while( !usable ) {
             msg = readMessage();
+            shaken_from = Message.isHandshake(msg);
 
-            if(Message.isHandshake(msg) == peerID) {
+            if(shaken_from == peerID) {
                 usable = true;
             }
+            else if(shaken_from != -1) {
+                //ERROR
+            }
+
+            //send handshake
+            sendMessage(Message.handshake(myID));
         }
     }
 
@@ -67,13 +76,13 @@ public class PeerConnection extends Thread{
         con.shutdown();
     }
 
-    public PeerConnection( String myAddr, int myPort, String peerAddr, int peerPort, boolean isUp, int peerID) {
+    public PeerConnection( String myAddr, int myPort, String peerAddr, int peerPort, boolean isUp, int peerID, int myID) {
 
         if(isUp) {
-            con = new ConnectUp(myPort, peerAddr, peerPort, peerID);
+            con = new ConnectUp(myPort, peerAddr, peerPort, peerID, myID);
         }
         else {
-            con = new ConnectDown(myAddr, myPort, peerAddr, peerPort, peerID);
+            con = new ConnectDown(myAddr, myPort, peerAddr, peerPort, peerID, myID);
         }
 
         con.start();
@@ -85,9 +94,10 @@ public class PeerConnection extends Thread{
 
         private ServerSocket server;
 
-        public ConnectUp(int myPort, String peerAddr, int peerPort, int peerID) {
+        public ConnectUp(int myPort, String peerAddr, int peerPort, int peerID, int myID) {
             try {
                 this.peerID = peerID;
+                this.myID = myID;
                 server = new ServerSocket(myPort);
                 goalAddr = InetAddress.getByName(peerAddr);
                 goalPort = peerPort;
@@ -122,11 +132,8 @@ public class PeerConnection extends Thread{
             while( connection.isClosed() );
 
             try {
-
                 out = new ObjectOutputStream(connection.getOutputStream());
-
                 in = new ObjectInputStream(connection.getInputStream());
-
                 waitForHandshake();
 
                 System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");
@@ -139,9 +146,10 @@ public class PeerConnection extends Thread{
     private static class ConnectDown extends Connection {
         private InetSocketAddress goalSocket;
 
-        public ConnectDown( String myAddr, int myPort, String peerAddr, int peerPort, int peerID ) {
+        public ConnectDown( String myAddr, int myPort, String peerAddr, int peerPort, int peerID, int myID ) {
             try {
                 this.peerID = peerID;
+                this.myID = myID;
                 connection = new Socket();
                 connection.bind(new InetSocketAddress(myAddr, myPort));
                 goalSocket = new InetSocketAddress(peerAddr, peerPort);
@@ -174,6 +182,7 @@ public class PeerConnection extends Thread{
                 }
             }
         
+            sendMessage(Message.handshake(myID));
             waitForHandshake();
 
             System.out.println("Connection made with " + connection.getRemoteSocketAddress() + "!");

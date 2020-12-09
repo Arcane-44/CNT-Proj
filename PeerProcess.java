@@ -18,19 +18,25 @@ public class PeerProcess {
     private static String peerInfoFileName = "./PeerInfo.cfg";
     private static String fileName = "";
 
+    //track if file downloaded by peers
+    private boolean file_downloaded;
+    private boolean all_downloaded = false;
+
     //Peer ID of machine running this peer process
     private int myID;
     private int setID(int id) { return myID = id; };
 
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
-    
     private byte[][] piecedData = new byte[ commonInfo.numPieces() ] [commonInfo.pieceSize()];
 
+    //keeps track of preferred neighbors
+    private ArrayList<Integer> preferredNeighborsList;
+    //Stores peerID for optimistically unchoked neighbor
+    private int optUnchokedID;
 
     //maps peerIDs to boolean representing whether they are choking this process.
     private HashMap<Integer, Boolean> chokedByList = new HashMap<>();
-
     private ArrayList<Integer> chokedPeersList;
 
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
@@ -47,11 +53,11 @@ public class PeerProcess {
 
     //stores all peer info
     private static ArrayList<PeerInfo> peerInfo = PeerInfo.readPeerInfo(peerInfoFileName);
-
     private ArrayList<Integer> peerIDs = new ArrayList<>();
 
     //Map peer ID to PeerConnection object
     private HashMap<Integer, PeerConnection> connections = new HashMap<>();
+
 
     private void communicate() {
         //read messages then respond/update info
@@ -71,10 +77,14 @@ public class PeerProcess {
             else
                 validID = true;
 
-            if( peer.hasFile() )
+            if( peer.hasFile() ) {
                 peerHas.put( Integer.valueOf(peer.peerID()) , Integer.valueOf(0xffffffff) );
-            else
+                file_downloaded = true;
+            }
+            else {
                 peerHas.put( Integer.valueOf(peer.peerID()), Integer.valueOf(0) );
+                file_downloaded = false;
+            }
 
             peerPort.put(Integer.valueOf(peer.peerID()), Integer.valueOf(peer.port() ) );
 
@@ -86,6 +96,7 @@ public class PeerProcess {
 
         if(!validID) {
             //ERROR
+            System.out.println("Bad ID on command line.");
         }
 
         if( peerHas.get( Integer.valueOf(myID) ) != 0 ) {
@@ -128,7 +139,7 @@ public class PeerProcess {
         for ( int id : peerIDs ) {
             if( id != myID ) {
                 connections.put( Integer.valueOf(id) , 
-                            new PeerConnection( peerHost.get( Integer.valueOf(myID) ), peerPort.get( Integer.valueOf(myID) ), peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), (id > myID), id ) );
+                            new PeerConnection( peerHost.get( Integer.valueOf(myID) ), peerPort.get( Integer.valueOf(myID) ), peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), (id > myID), id, myID ) );
             }
         }
         boolean connected_all = false;
@@ -157,6 +168,8 @@ public class PeerProcess {
         //Should have exactly one arg
         if(args.length != 1) {
             //Return error
+            System.out.println("Need exactly 1 command line argument.");
+            return;
         }
 
         //Sets my peer ID to the arg from command line
@@ -165,7 +178,18 @@ public class PeerProcess {
         //read PeerInfo.cfg using appropriate method
         me.readPeerInfo();
 
+        //connect to all peers
         me.connectToPeers();
+
+        while(!me.all_downloaded) {
+
+            if( !me.file_downloaded ) {
+
+            }
+            else {
+
+            }
+        }
 
         me.shutdown();
 

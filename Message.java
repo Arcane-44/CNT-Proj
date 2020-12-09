@@ -1,6 +1,5 @@
 //import org.graalvm.compiler.replacements.arraycopy.ArrayCopy;
 import java.lang.*;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Message {
@@ -74,19 +73,6 @@ public class Message {
         return msg;
     }
 
-    public static byte[] have(int index) {
-        byte[] ret = new byte[9];
-
-        //put message length in message: payload is 4 bytes
-        System.arraycopy(intToBytes(4), 0, ret, 0, 4);
-        //message type
-        ret[4] = HAVE;
-        //payload is index number
-        System.arraycopy(intToBytes(index), 0, ret, 5, 4);
-
-        return ret;
-    }
-
     public static byte[] choke() {
         byte[] ret = new byte[5];
 
@@ -127,6 +113,32 @@ public class Message {
         System.arraycopy(intToBytes(0), 0, ret, 0, 4);
         //message type
         ret[4] = NOT_INTERESTED;
+
+        return ret;
+    }
+
+    public static byte[] have(int index) {
+        byte[] ret = new byte[9];
+
+        //put message length in message: payload is 4 bytes
+        System.arraycopy(intToBytes(4), 0, ret, 0, 4);
+        //message type
+        ret[4] = HAVE;
+        //payload is index number
+        System.arraycopy(intToBytes(index), 0, ret, 5, 4);
+
+        return ret;
+    }
+
+    public static byte[] bitfield(int bf) {
+        byte[] ret = new byte[9];
+
+        //put message length in message: payload is 4 bytes
+        System.arraycopy(intToBytes(4), 0, ret, 0, 4);
+        //message type
+        ret[4] = BITFIELD;
+        //payload is bitfield number
+        System.arraycopy(intToBytes(bf), 0, ret, 5, 4);
 
         return ret;
     }
