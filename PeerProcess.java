@@ -2,6 +2,7 @@ import java.util.Hashtable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.net.*;
 import java.lang.Integer;
@@ -17,6 +18,7 @@ public class PeerProcess {
     private static String commonInfoFileName = "./Common.cfg";
     private static String peerInfoFileName = "./PeerInfo.cfg";
     private static String fileName = "";
+    private static String pieceFileName = "";
 
     //track if file downloaded by peers
     private boolean file_downloaded;
@@ -28,7 +30,6 @@ public class PeerProcess {
 
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
-    private byte[][] piecedData = new byte[ commonInfo.numPieces() ] [commonInfo.pieceSize()];
 
     //keeps track of preferred neighbors
     private ArrayList<Integer> preferredNeighborsList;
@@ -62,6 +63,21 @@ public class PeerProcess {
     private void communicate() {
         //read messages then respond/update info
 
+    }
+
+    private byte[] getPiece(int index) {
+        byte[] ret = null;
+        try{
+            ret = new byte[commonInfo.pieceSize()];
+            FileInputStream pieceFile = new FileInputStream(pieceFileName + index);
+            pieceFile.read(ret);
+            pieceFile.close();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return ret;
     }
 
     /**************** Files and initialization ******************/
@@ -101,28 +117,25 @@ public class PeerProcess {
 
         if( peerHas.get( Integer.valueOf(myID) ) != 0 ) {
             try {
-
                 FileInputStream file = new FileInputStream(fileName);
+                FileOutputStream pieceFile;
 
                 byte[] fileData = new byte[ commonInfo.fileSize() ];
-
                 file.read(fileData, 0, commonInfo.fileSize() );
-
                 file.close();
 
-                //put file into piecedData array as pieces
+                //break file into piece files
                 for (int i = 0; i < commonInfo.numPieces(); i++) {
-
+                    pieceFile = new FileOutputStream(pieceFileName + i);
                     int offset = i*commonInfo.pieceSize();
 
-                    System.arraycopy(fileData, offset, piecedData[i], 0, Math.min(commonInfo.pieceSize(), commonInfo.fileSize() - offset ) );
+                    pieceFile.write(fileData, offset, Math.min(commonInfo.pieceSize(), commonInfo.fileSize() - offset ) );
+                    pieceFile.close();
                 }
-
             }
             catch(Exception e) {
                 e.printStackTrace();
             }
-
         }
     };
 
@@ -157,7 +170,6 @@ public class PeerProcess {
         }
 
         System.out.println("Connected to all peers!");
-
     }
 
     
