@@ -27,6 +27,7 @@ public class PeerProcess {
     //Peer ID of machine running this peer process
     private int myID;
     private int setID(int id) { return myID = id; };
+    public int myID() { return myID; }
 
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
@@ -60,7 +61,7 @@ public class PeerProcess {
     private HashMap<Integer, PeerConnection> connections = new HashMap<>();
 
 
-    private void communicate() {
+    private void communicate(int peerID) {
         //read messages then respond/update info
 
     }

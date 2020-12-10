@@ -29,7 +29,7 @@ abstract class Connection extends Thread{
         }
     }
 
-    public byte[] readMessage() {
+    public Message readMessage() {
         byte[] ret;
         try {
             ret = (byte[]) (in.readObject() );
@@ -38,15 +38,15 @@ abstract class Connection extends Thread{
             ret = null;
         }
 
-        return ret;
+        return new Message(ret);
     }
 
     protected void waitForHandshake() {
-        byte[] msg;
+        Message msg;
         int shaken_from;
         while( !usable ) {
             msg = readMessage();
-            shaken_from = Message.isHandshake(msg);
+            shaken_from = msg.getHandshake();
 
             if(shaken_from == peerID) {
                 usable = true;
