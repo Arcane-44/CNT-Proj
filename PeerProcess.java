@@ -1,4 +1,6 @@
 import java.util.Hashtable;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.FileInputStream;
@@ -32,14 +34,12 @@ public class PeerProcess {
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
 
-    //keeps track of preferred neighbors
-    private ArrayList<Integer> preferredNeighborsList;
-    //Stores peerID for optimistically unchoked neighbor
-    private int optUnchokedID;
-
     //maps peerIDs to boolean representing whether they are choking this process.
-    private HashMap<Integer, Boolean> chokedByList = new HashMap<>();
-    private ArrayList<Integer> chokedPeersList;
+    private HashMap<Integer, Boolean> chokedByMap = new HashMap<>();
+    private HashMap<Integer, Boolean> preferredNeighborMap = new HashMap<>();
+    private int optUnchokedNeighborID;
+    private Timer optUnchokeTimer = new Timer();
+    private Timer prefUnchokeTimer = new Timer();
 
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
     private HashMap<Integer, Boolean> wantMe = new HashMap<>();
@@ -88,7 +88,8 @@ public class PeerProcess {
         //Initialize chokeList, wantMe, peerHas by iterating through peers
         for( PeerInfo peer : peerInfo ) {
             if( myID != peer.peerID() ) {
-                chokedByList.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(true) );    //initially choked by all peers
+                chokedByMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(true) );    //initially choked by all peers
+                preferredNeighborMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(true) );    //initial preferred neighbors not set
                 wantMe.put( Integer.valueOf(peer.peerID()) , Boolean.valueOf(false) );    //initially unwanted by all peers
             }
             else
@@ -140,14 +141,17 @@ public class PeerProcess {
         }
     };
 
-    public void shutdown() {
+    private void shutdown() {
         for( Integer id : peerIDs ) {
             if( id.intValue() != myID )
                 connections.get(id).shutdown();
         }
+
+        optUnchokeTimer.cancel();
+        prefUnchokeTimer.cancel();
     }
 
-    public void connectToPeers() {
+    private void connectToPeers() {
         System.out.println("Connecting...");
 
         for ( int id : peerIDs ) {
@@ -173,6 +177,15 @@ public class PeerProcess {
         System.out.println("Connected to all peers!");
     }
 
+
+    public void updatePreferredNeighbors() {
+
+    }
+
+    public void updateOptNeighbor() {
+        
+    }
+
     
     public static void main(String[] args) {
 
@@ -193,6 +206,9 @@ public class PeerProcess {
 
         //connect to all peers
         me.connectToPeers();
+
+        me.optUnchokeTimer.schedule(new ChokeTimerTask(me, ChokeTimerTask.OPTIMISTICALLY_UNCHOKED), 0, commonInfo.optUnchokeInterval() );
+        me.prefUnchokeTimer.schedule(new ChokeTimerTask(me, ChokeTimerTask.PREFERRED), 0, commonInfo.optUnchokeInterval() );
 
         while(!me.all_downloaded) {
 

@@ -1,4 +1,8 @@
-public class Handler {
+//Static class for functionality.
+public final class InputHandler {
+    //private constructor: DO NOT INSTANTIATE
+    private InputHandler() {}
+
     private static void handle_choke(PeerProcess proc, Message msg, int peerID) {
 
     }
@@ -31,7 +35,8 @@ public class Handler {
         
     }
 
-    public static void handle(PeerProcess proc, Message msg, int peerID) {
+    //Only public method.
+    public static void handle_input(PeerProcess proc, Message msg, int peerID) {
         switch( msg.getType() ) {
             case Message.CHOKE:
                 handle_choke(proc, msg, peerID);

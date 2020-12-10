@@ -4,7 +4,7 @@ import java.io.ObjectOutputStream;
 import java.net.*;
 import java.io.*;
 
-abstract class Connection extends Thread{
+abstract class Connector extends Thread{
     protected Socket connection;
     
     private boolean usable = false;
@@ -64,7 +64,7 @@ abstract class Connection extends Thread{
 
 public class PeerConnection extends Thread{
 
-    private Connection con;
+    private Connector con;
 
     public boolean usable() { return con.usable(); }
 
@@ -79,22 +79,22 @@ public class PeerConnection extends Thread{
     public PeerConnection( String myAddr, int myPort, String peerAddr, int peerPort, boolean isUp, int peerID, int myID) {
 
         if(isUp) {
-            con = new ConnectUp(myPort, peerAddr, peerPort, peerID, myID);
+            con = new UpConnector(myPort, peerAddr, peerPort, peerID, myID);
         }
         else {
-            con = new ConnectDown(myAddr, myPort, peerAddr, peerPort, peerID, myID);
+            con = new DownConnector(myAddr, myPort, peerAddr, peerPort, peerID, myID);
         }
 
         con.start();
     }
 
-    private static class ConnectUp extends Connection {
+    private static class UpConnector extends Connector {
         private InetAddress goalAddr;
         private int goalPort;
 
         private ServerSocket server;
 
-        public ConnectUp(int myPort, String peerAddr, int peerPort, int peerID, int myID) {
+        public UpConnector(int myPort, String peerAddr, int peerPort, int peerID, int myID) {
             try {
                 this.peerID = peerID;
                 this.myID = myID;
@@ -106,6 +106,7 @@ public class PeerConnection extends Thread{
             }
         }
 
+        @Override
         public void shutdown() {
             try {
                 super.shutdown();
@@ -116,6 +117,7 @@ public class PeerConnection extends Thread{
             }
         }
 
+        @Override
         public void run() {
 
             do {
@@ -143,10 +145,10 @@ public class PeerConnection extends Thread{
         }
     }
 
-    private static class ConnectDown extends Connection {
+    private static class DownConnector extends Connector {
         private InetSocketAddress goalSocket;
 
-        public ConnectDown( String myAddr, int myPort, String peerAddr, int peerPort, int peerID, int myID ) {
+        public DownConnector( String myAddr, int myPort, String peerAddr, int peerPort, int peerID, int myID ) {
             try {
                 this.peerID = peerID;
                 this.myID = myID;
@@ -158,6 +160,7 @@ public class PeerConnection extends Thread{
             }
         }
 
+        @Override
         public void shutdown() {
             try {
                 super.shutdown();
@@ -167,6 +170,7 @@ public class PeerConnection extends Thread{
             }
         }
 
+        @Override
         public void run() {
 
             if( !connection.isConnected() ) {
