@@ -55,8 +55,7 @@ public class PeerProcess {
     private static ArrayList<PeerInfo> peerInfo = PeerInfo.readPeerInfo(peerInfoFileName);
     private ArrayList<Integer> peerIDs = new ArrayList<>();
 
-    //Map peer ID to PeerConnection object
-    private HashMap<Integer, PeerConnection> connections = new HashMap<>();
+    //Map to hold Communicator objects for each peer
     private HashMap<Integer, Communicator> communicators = new HashMap<>();
 
     private byte[] getPiece(int index) {
@@ -143,7 +142,7 @@ public class PeerProcess {
     private void shutdown() {
         for( Integer id : peerIDs ) {
             if( id.intValue() != myID )
-                connections.get(id).shutdown();
+                communicators.get(id).shutdown();
         }
 
         optUnchokeTimer.cancel();
