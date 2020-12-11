@@ -9,7 +9,11 @@ public class Logger {
         return date_format.format(date);
     }
 
-    public static void log_tcp(int myID, int peerID) {
+    public static void log_tcp_up(int myID, int peerID) {
+
+    }
+
+    public static void log_tcp_down(int myID, int peerID) {
 
     }
 

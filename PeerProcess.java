@@ -1,11 +1,6 @@
-import java.util.Hashtable;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.io.*;
 import java.net.*;
 import java.lang.Integer;
 import java.lang.Math;
@@ -34,8 +29,11 @@ public class PeerProcess {
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
 
+    //Stores messages from different peers in their respective queues.
+    private HashMap<Integer, LinkedBlockingQueue<Message>> receivedMessageQueues;
+
     //maps peerIDs to boolean representing whether they are choking this process.
-    private HashMap<Integer, Boolean> chokedByMap = new HashMap<>();
+    private HashMap<Integer, Boolean> unchokedByMap = new HashMap<>();
     private HashMap<Integer, Boolean> preferredNeighborMap = new HashMap<>();
     private int optUnchokedNeighborID;
     private Timer optUnchokeTimer = new Timer();
@@ -60,12 +58,6 @@ public class PeerProcess {
     //Map peer ID to PeerConnection object
     private HashMap<Integer, PeerConnection> connections = new HashMap<>();
 
-
-    private void communicate(int peerID) {
-        //read messages then respond/update info
-
-    }
-
     private byte[] getPiece(int index) {
         byte[] ret = null;
         try{
@@ -88,12 +80,13 @@ public class PeerProcess {
         //Initialize chokeList, wantMe, peerHas by iterating through peers
         for( PeerInfo peer : peerInfo ) {
             if( myID != peer.peerID() ) {
-                chokedByMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(true) );    //initially choked by all peers
-                preferredNeighborMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(true) );    //initial preferred neighbors not set
+                unchokedByMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(false) );    //initially choked by all peers
+                preferredNeighborMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(false) );    //initial preferred neighbors not set
                 wantMe.put( Integer.valueOf(peer.peerID()) , Boolean.valueOf(false) );    //initially unwanted by all peers
             }
-            else
+            else {
                 validID = true;
+            }
 
             if( peer.hasFile() ) {
                 peerHas.put( Integer.valueOf(peer.peerID()) , Integer.valueOf(0xffffffff) );
@@ -119,21 +112,26 @@ public class PeerProcess {
 
         if( peerHas.get( Integer.valueOf(myID) ) != 0 ) {
             try {
-                FileInputStream file = new FileInputStream(fileName);
+                FileInputStream fin =  new FileInputStream(fileName);
+                BufferedInputStream bin = new BufferedInputStream( fin );
+                byte[] buffer = new byte[commonInfo.pieceSize()];
                 FileOutputStream pieceFile;
-
-                byte[] fileData = new byte[ commonInfo.fileSize() ];
-                file.read(fileData, 0, commonInfo.fileSize() );
-                file.close();
 
                 //break file into piece files
                 for (int i = 0; i < commonInfo.numPieces(); i++) {
+
                     pieceFile = new FileOutputStream(pieceFileName + i);
+
                     int offset = i*commonInfo.pieceSize();
 
-                    pieceFile.write(fileData, offset, Math.min(commonInfo.pieceSize(), commonInfo.fileSize() - offset ) );
+                    bin.read( buffer, offset, commonInfo.pieceSize() );
+
+                    pieceFile.write( buffer );
                     pieceFile.close();
                 }
+
+                fin.close();
+                bin.close();
             }
             catch(Exception e) {
                 e.printStackTrace();
@@ -166,10 +164,8 @@ public class PeerProcess {
             connected_all = true;
 
             for( int id : peerIDs ) {
-
                 if( (id != myID) && (!connections.get( Integer.valueOf(id) ).usable() ) )
                         connected_all = false;
-
             }
 
         }

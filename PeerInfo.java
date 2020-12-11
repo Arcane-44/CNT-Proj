@@ -12,7 +12,6 @@ public class PeerInfo {
         this.peerID=peerID;
     }
 
-
     //host name attribute
     private String hostName;
     public String hostName() {return hostName;};
@@ -29,15 +28,12 @@ public class PeerInfo {
         this.port=port;
     }
 
-
     //has file attribute
     private boolean hasFile;
     public boolean hasFile() {return hasFile;};
     public void setHasFile(boolean hasFile){
         this.hasFile=hasFile;
     }
-
-
 
     public static ArrayList<PeerInfo> readPeerInfo(String filename) {
         //parse line here

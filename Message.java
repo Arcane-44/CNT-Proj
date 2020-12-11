@@ -52,10 +52,12 @@ public class Message {
 
     public Message(byte[] msg) {
         handshake = isHandshake(msg);
-        byte[] len_array=Arrays.copyOfRange(msg,0,3);
-        this.len=bytesToInt(len_array);
-        this.type=bytesToInt(Arrays.copyOfRange(msg,3,4));
-        this.payload=Arrays.copyOfRange(msg,4,msg.length-1);
+        if(handshake == -1) {
+            byte[] len_array=Arrays.copyOfRange(msg,0,3);
+            this.len=bytesToInt(len_array);
+            this.type=bytesToInt(Arrays.copyOfRange(msg,3,4));
+            this.payload=Arrays.copyOfRange(msg,4,msg.length-1);
+        }
     }
 
     public static byte[] handshake(int id) {

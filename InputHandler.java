@@ -37,6 +37,9 @@ public final class InputHandler {
 
     //Only public method.
     public static void handle_input(PeerProcess proc, Message msg, int peerID) {
+        if(msg.getHandshake() != -1) {
+            //ERROR
+        }
         switch( msg.getType() ) {
             case Message.CHOKE:
                 handle_choke(proc, msg, peerID);
