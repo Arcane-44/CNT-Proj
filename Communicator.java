@@ -72,16 +72,53 @@ public class Communicator extends Connector{
     private Message_Reader reader;
     private Message_Sender sender;
     private LinkedBlockingQueue<Message> received_message_queue;
+    private int myBitfield;
+
 
     private boolean usable = false;
     public boolean usable() { return usable; }
 
-    public Communicator(int myID, String myAddr, int myPort, int target_peer, String peerAddr, int peerPort, LinkedBlockingQueue<Message> received_message_queue, P2PLogger logger) {
-        super(myID, myAddr, myPort, target_peer, peerAddr, peerPort);
-        this.received_message_queue = received_message_queue;
+    public Communicator(PeerProcess proc, int myID, int target_peer) {
+        super(myID, proc.getHost( myID ), proc.getPort(myID), target_peer, proc.getHost(target_peer), proc.getPort(target_peer) );
+        this.received_message_queue = proc.getMessageQueue(target_peer);
+        myBitfield = proc.peerHas( myID() );
     }
 
     public void send_message(byte[] msg) { if(usable) { sender.add_message(msg); } }
+
+    private void handshake_and_bitfield() {
+        Message msg;
+        boolean shaken = false;
+        int shaker;
+
+        //send handshake first if peer is down
+        if( !is_up() ) {
+            sender.add_message(Message.handshake( myID() ));
+        }
+
+        while( !shaken ) {
+            msg = received_message_queue.poll();
+            shaker = msg.getHandshake();
+
+            if( shaker == targetID() ) {
+                shaken = true;
+            }
+            else if(shaker != -1) {
+                //ERROR
+            }
+            else {
+                //SOMETHING WENT VERY WRONG
+            }
+        }
+
+        //send handshake after receiving if peer is up
+        if(is_up()) {
+            sender.add_message(Message.handshake( myID() ));
+        }
+
+        //After all handshaking sent the bitfield
+        sender.add_message( Message.bitfield(myBitfield) );
+    }
 
     @Override
     public void shutdown() {
@@ -100,11 +137,8 @@ public class Communicator extends Connector{
         reader = new Message_Reader(get_in(), received_message_queue);
         sender = new Message_Sender(get_out());
 
-        //Complete handshake
-
-
-        //send bitfield message directly after handshake protocol
-
+        //Complete handshake and bitfield protocol
+        handshake_and_bitfield();
 
         //make communicator usable after handshake protocol complete (maybe)
         usable = true;

@@ -40,7 +40,7 @@ public class P2PLogger {
     public void log_preferred_neighbors(int myID, ArrayList<Integer> prefNeighbors) {
       int size=prefNeighbors.size();
       for (int i=0;i<size;i++){
-        logger.info(":Peer " + this.myID + " contains neighbor " + prefNeighbors[i]+ "\n");
+        logger.info(":Peer " + this.myID + " contains neighbor " + prefNeighbors.get(i) + "\n");
       }
 
     }

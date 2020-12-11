@@ -15,8 +15,11 @@ public class Connector extends Thread {
     protected boolean is_connected() { return connected; }
 
     private int myID;
+    public int myID() { return myID; }
     private int targetID;
+    public int targetID() { return targetID; }
     private boolean is_up;
+    public boolean is_up() { return is_up; };
 
     public void shutdown() {
         connected = false;

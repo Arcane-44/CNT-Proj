@@ -31,22 +31,31 @@ public class PeerProcess {
 
     //Stores messages from different peers in their respective queues.
     private HashMap<Integer, LinkedBlockingQueue<Message>> receivedMessageQueues;
+    public LinkedBlockingQueue<Message> getMessageQueue(int i) { return receivedMessageQueues.get(Integer.valueOf(i)); }
 
     //maps peerIDs to boolean representing whether they are choking this process.
     private HashMap<Integer, Boolean> unchokedByMap = new HashMap<>();
     private HashMap<Integer, Boolean> preferredNeighborMap = new HashMap<>();
     private int optUnchokedNeighborID;
+
+    //Timers for regularly updating neighbors
     private Timer optUnchokeTimer = new Timer();
     private Timer prefUnchokeTimer = new Timer();
 
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
     private HashMap<Integer, Boolean> wantMe = new HashMap<>();
+
     //stores the bitmaps of peers (and self)
     private HashMap<Integer, Integer> peerHas = new HashMap<>();
+    public int peerHas(int i) { return peerHas.get(Integer.valueOf(i)); }
+
     //stores ports for peers
     private HashMap<Integer, Integer> peerPort = new HashMap<>();
+    public int getPort(int i) { return peerPort.get(Integer.valueOf(i)); }
+
     //stores hostnames for peers
     private HashMap<Integer, String> peerHost = new HashMap<>();
+    public String getHost(int i) { return peerHost.get(Integer.valueOf(i)); }
 
     //stores all peer info
     private static ArrayList<PeerInfo> peerInfo = PeerInfo.readPeerInfo(peerInfoFileName);
@@ -154,9 +163,7 @@ public class PeerProcess {
         for ( int id : peerIDs ) {
             if( id != myID ) {
                 communicators.put( Integer.valueOf(id) , 
-                    new Communicator(   myID,   peerHost.get( Integer.valueOf(myID)),   peerPort.get( Integer.valueOf(myID) ),
-                                        id,     peerHost.get( Integer.valueOf(id) ),    peerPort.get( Integer.valueOf(id) ), 
-                                        receivedMessageQueues.get(Integer.valueOf(id)), logger ) );
+                    new Communicator( this, myID, id ) );
                 communicators.get( Integer.valueOf(id) ).start();
             }
         }
