@@ -1,6 +1,7 @@
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.*;
 
 public class Communicator extends Connector{
     
@@ -75,7 +76,7 @@ public class Communicator extends Connector{
     private boolean usable = false;
     public boolean usable() { return usable; }
 
-    public Communicator(int myID, String myAddr, int myPort, int target_peer, String peerAddr, int peerPort, LinkedBlockingQueue<Message> received_message_queue) {
+    public Communicator(int myID, String myAddr, int myPort, int target_peer, String peerAddr, int peerPort, LinkedBlockingQueue<Message> received_message_queue, P2PLogger logger) {
         super(myID, myAddr, myPort, target_peer, peerAddr, peerPort);
         this.received_message_queue = received_message_queue;
     }

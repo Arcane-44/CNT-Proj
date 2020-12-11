@@ -41,13 +41,10 @@ public class PeerProcess {
 
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
     private HashMap<Integer, Boolean> wantMe = new HashMap<>();
-
     //stores the bitmaps of peers (and self)
     private HashMap<Integer, Integer> peerHas = new HashMap<>();
-
     //stores ports for peers
     private HashMap<Integer, Integer> peerPort = new HashMap<>();
-
     //stores hostnames for peers
     private HashMap<Integer, String> peerHost = new HashMap<>();
 
@@ -57,6 +54,8 @@ public class PeerProcess {
 
     //Map to hold Communicator objects for each peer
     private HashMap<Integer, Communicator> communicators = new HashMap<>();
+
+    P2PLogger logger;
 
     private byte[] getPiece(int index) {
         byte[] ret = null;
@@ -155,7 +154,9 @@ public class PeerProcess {
         for ( int id : peerIDs ) {
             if( id != myID ) {
                 communicators.put( Integer.valueOf(id) , 
-                    new Communicator(myID, peerHost.get( Integer.valueOf(myID)), peerPort.get( Integer.valueOf(myID) ), id, peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), receivedMessageQueues.get(Integer.valueOf(id)) ) );
+                    new Communicator(   myID,   peerHost.get( Integer.valueOf(myID)),   peerPort.get( Integer.valueOf(myID) ),
+                                        id,     peerHost.get( Integer.valueOf(id) ),    peerPort.get( Integer.valueOf(id) ), 
+                                        receivedMessageQueues.get(Integer.valueOf(id)), logger ) );
                 communicators.get( Integer.valueOf(id) ).start();
             }
         }
@@ -201,6 +202,14 @@ public class PeerProcess {
         //read PeerInfo.cfg using appropriate method
         me.readPeerInfo();
 
+        try {
+            me.logger = new P2PLogger(me.myID);
+        }
+        catch(Exception e) {
+            System.out.println("Failed to make Logger.");
+            e.printStackTrace();
+        }
+
         //connect to all peers
         me.connectToPeers();
 
@@ -217,7 +226,7 @@ public class PeerProcess {
                     curr_peer = entry.getKey();
                     curr_peer_messages = entry.getValue();
 
-                    //gets all messages from the peer's queue
+                    //gets all messages from the peer's queue and handles them
                     while( !curr_peer_messages.isEmpty() ) {
                         InputHandler.handle_input(me, curr_peer_messages.poll(), curr_peer);
                     }
