@@ -1,6 +1,7 @@
 //import org.graalvm.compiler.replacements.arraycopy.ArrayCopy;
 import java.lang.*;
 import java.util.Arrays;
+import java.util.BitSet;
 
 public class Message {
     
@@ -132,15 +133,16 @@ public class Message {
         return ret;
     }
 
-    public static byte[] bitfield(int bf) {
-        byte[] ret = new byte[9];
+    public static byte[] bitfield(BitSet bits) {
+        byte[] bitfield_bytes = bits.toByteArray();
+        byte[] ret = new byte[5 + bitfield_bytes.length];
 
         //put message length in message: payload is 4 bytes
         System.arraycopy(intToBytes(4), 0, ret, 0, 4);
         //message type
         ret[4] = BITFIELD;
         //payload is bitfield number
-        System.arraycopy(intToBytes(bf), 0, ret, 5, 4);
+        System.arraycopy(bitfield_bytes, 0, ret, 5, bitfield_bytes.length);
 
         return ret;
     }

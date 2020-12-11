@@ -20,6 +20,7 @@ public class PeerProcess {
     //track if file downloaded by peers
     private boolean file_downloaded;
     private boolean all_downloaded = false;
+    private int all_pieces;
 
     //Peer ID of machine running this peer process
     private int myID;
@@ -46,9 +47,9 @@ public class PeerProcess {
     private HashMap<Integer, Boolean> wantMe = new HashMap<>();
     public boolean wantsMe(int i) { return wantMe.get(Integer.valueOf(i)); }
 
-    //stores the bitmaps of peers (and self)
-    private HashMap<Integer, Integer> peerHas = new HashMap<>();
-    public int peerHas(int i) { return peerHas.get(Integer.valueOf(i)); }
+    //stores the bitfields of peers (and self)
+    private HashMap<Integer, BitSet> peerHas = new HashMap<>();
+    public BitSet peerHas(int i) { return peerHas.get(Integer.valueOf(i)); }
 
     //stores ports for peers
     private HashMap<Integer, Integer> peerPort = new HashMap<>();
@@ -64,6 +65,7 @@ public class PeerProcess {
 
     //Map to hold Communicator objects for each peer
     private HashMap<Integer, Communicator> communicators = new HashMap<>();
+    public Communicator getComm(int i) { return communicators.get( Integer.valueOf(i) ); }
 
     P2PLogger logger;
 
@@ -97,18 +99,19 @@ public class PeerProcess {
                 validID = true;
             }
 
+            peerHas.put( Integer.valueOf(peer.peerID()) , new BitSet(commonInfo.numPieces()) );
             if( peer.hasFile() ) {
-                peerHas.put( Integer.valueOf(peer.peerID()) , Integer.valueOf(0xffffffff) );
+                peerHas(peer.peerID()).set(0, commonInfo.numPieces());
                 file_downloaded = true;
             }
             else {
-                peerHas.put( Integer.valueOf(peer.peerID()), Integer.valueOf(0) );
+                peerHas(peer.peerID()).clear();
                 file_downloaded = false;
             }
 
-            peerPort.put(Integer.valueOf(peer.peerID()), Integer.valueOf(peer.port() ) );
+            peerPort.put( Integer.valueOf(peer.peerID()), Integer.valueOf(peer.port()) );
 
-            peerHost.put(Integer.valueOf(peer.peerID() ), peer.hostName() );
+            peerHost.put( Integer.valueOf(peer.peerID() ), peer.hostName() );
 
             peerIDs.add( Integer.valueOf(peer.peerID() ) );
 
@@ -119,7 +122,7 @@ public class PeerProcess {
             System.out.println("Bad ID on command line.");
         }
 
-        if( peerHas.get( Integer.valueOf(myID) ) != 0 ) {
+        if( !peerHas(myID).isEmpty() ) {
             try {
                 FileInputStream fin =  new FileInputStream(fileName);
                 BufferedInputStream bin = new BufferedInputStream( fin );
@@ -165,7 +168,7 @@ public class PeerProcess {
             if( id != myID ) {
                 communicators.put( Integer.valueOf(id) , 
                     new Communicator( this, myID, id ) );
-                communicators.get( Integer.valueOf(id) ).start();
+                getComm( id ).start();
             }
         }
         boolean connected_all = false;
@@ -174,7 +177,7 @@ public class PeerProcess {
             connected_all = true;
 
             for( int id : peerIDs ) {
-                if( (id != myID) && (!communicators.get( Integer.valueOf(id) ).usable() ) )
+                if( (id != myID) && (!getComm(id).usable() ) )
                         connected_all = false;
             }
 
@@ -185,11 +188,18 @@ public class PeerProcess {
 
 
     public void updatePreferredNeighbors() {
+        //Select preferred neighbors randomly if I have the entire file
+        if(file_downloaded) {
 
+        } 
+        //Otherwise choose preferred neighbors based on fastest data rates
+        else {
+
+        }
     }
 
     public void updateOptNeighbor() {
-        
+        //Choose randomly from interested choked peers
     }
 
     
@@ -227,25 +237,22 @@ public class PeerProcess {
         LinkedBlockingQueue<Message> curr_peer_messages;
         int curr_peer;
         while(!me.all_downloaded) {
+            //Check messages regardless of if I have the file
+            for( HashMap.Entry<Integer, LinkedBlockingQueue<Message> > entry : me.receivedMessageQueues.entrySet() ) {
+                curr_peer = entry.getKey();
+                curr_peer_messages = entry.getValue();
+
+                //gets all messages from the peer's queue and handles them
+                while( !curr_peer_messages.isEmpty() ) {
+                    InputHandler.handle_input(me, curr_peer_messages.poll(), curr_peer);
+                }
+            }
 
             if( !me.file_downloaded ) {
-                //Go through all peers' queues
-                for( HashMap.Entry<Integer, LinkedBlockingQueue<Message> > entry : me.receivedMessageQueues.entrySet() ) {
-                    curr_peer = entry.getKey();
-                    curr_peer_messages = entry.getValue();
-
-                    //gets all messages from the peer's queue and handles them
-                    while( !curr_peer_messages.isEmpty() ) {
-                        InputHandler.handle_input(me, curr_peer_messages.poll(), curr_peer);
-                    }
-                }
-
-                //Take initiative for sending messages needed
-
+                //Request pieces from interesting peers that are not choking me
             }
             else {
                 //What to do when I have full file?
-
             }
         }
 

@@ -72,7 +72,7 @@ public class Communicator extends Connector{
     private Message_Reader reader;
     private Message_Sender sender;
     private LinkedBlockingQueue<Message> received_message_queue;
-    private int myBitfield;
+    private BitSet myBitfield;
 
 
     private boolean usable = false;
