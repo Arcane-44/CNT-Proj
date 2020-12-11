@@ -44,6 +44,7 @@ public class PeerProcess {
 
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
     private HashMap<Integer, Boolean> wantMe = new HashMap<>();
+    public boolean wantsMe(int i) { return wantMe.get(Integer.valueOf(i)); }
 
     //stores the bitmaps of peers (and self)
     private HashMap<Integer, Integer> peerHas = new HashMap<>();

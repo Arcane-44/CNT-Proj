@@ -34,7 +34,7 @@ public class P2PLogger {
     }
 
     public void log_tcp_up(int peerID) {
-      logger.info(":Peer " + this.myID + " is connected to by Peer " + peerID + "\n");
+      logger.info(":Peer " + this.myID + " is connected from Peer " + peerID + "\n");
     }
 
     public void log_preferred_neighbors(int myID, ArrayList<Integer> prefNeighbors) {
@@ -87,5 +87,4 @@ public class P2PLogger {
       logger.info(": Peer " + this.myID + " is handshaked by " + peerID + "\n");
 
     }
-
 }
