@@ -13,6 +13,7 @@ public class Communicator extends Connector{
         public Message_Reader(ObjectInputStream i, LinkedBlockingQueue<Message> rcv) {
             in = i;
             received_queue = rcv;
+            active = true;
         }
 
         public void shutdown() {
@@ -40,6 +41,7 @@ public class Communicator extends Connector{
 
         public Message_Sender(ObjectOutputStream o) {
             out = o;
+            active = true;
         }
 
         public void shutdown() {
@@ -52,8 +54,6 @@ public class Communicator extends Connector{
 
         @Override
         public void run() {
-            active = true;
-
             while(active) {
                 if( !sending_queue.isEmpty() ) {
                     try {
@@ -73,13 +73,14 @@ public class Communicator extends Connector{
     private LinkedBlockingQueue<Message> received_message_queue;
 
     private boolean usable = false;
+    public boolean usable() { return usable; }
 
     public Communicator(int myID, String myAddr, int myPort, int target_peer, String peerAddr, int peerPort, LinkedBlockingQueue<Message> received_message_queue) {
         super(myID, myAddr, myPort, target_peer, peerAddr, peerPort);
         this.received_message_queue = received_message_queue;
     }
 
-    public void send_message(byte[] msg) { sender.add_message(msg); }
+    public void send_message(byte[] msg) { if(usable) { sender.add_message(msg); } }
 
     @Override
     public void shutdown() {
@@ -91,10 +92,18 @@ public class Communicator extends Connector{
 
     @Override
     public void run() {
+        //Do task for Connector
         super.run();
 
+        //Make reader and sender objects
         reader = new Message_Reader(get_in(), received_message_queue);
         sender = new Message_Sender(get_out());
 
+        //Complete handshake
+
+        //send bitfield message directly after handshake protocol
+
+        //make communicator usable after handshake protocol complete
+        usable = true;
     }
 }

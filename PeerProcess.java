@@ -57,6 +57,7 @@ public class PeerProcess {
 
     //Map peer ID to PeerConnection object
     private HashMap<Integer, PeerConnection> connections = new HashMap<>();
+    private HashMap<Integer, Communicator> communicators = new HashMap<>();
 
     private byte[] getPiece(int index) {
         byte[] ret = null;
@@ -154,8 +155,9 @@ public class PeerProcess {
 
         for ( int id : peerIDs ) {
             if( id != myID ) {
-                connections.put( Integer.valueOf(id) , 
-                            new PeerConnection( peerHost.get( Integer.valueOf(myID) ), peerPort.get( Integer.valueOf(myID) ), peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), (id > myID), id, myID ) );
+                communicators.put( Integer.valueOf(id) , 
+                    new Communicator(myID, peerHost.get( Integer.valueOf(myID)), peerPort.get( Integer.valueOf(myID) ), id, peerHost.get( Integer.valueOf(id) ), peerPort.get( Integer.valueOf(id) ), receivedMessageQueues.get(Integer.valueOf(id)) ) );
+                communicators.get( Integer.valueOf(id) ).start();
             }
         }
         boolean connected_all = false;
@@ -164,7 +166,7 @@ public class PeerProcess {
             connected_all = true;
 
             for( int id : peerIDs ) {
-                if( (id != myID) && (!connections.get( Integer.valueOf(id) ).usable() ) )
+                if( (id != myID) && (!communicators.get( Integer.valueOf(id) ).usable() ) )
                         connected_all = false;
             }
 
