@@ -207,12 +207,27 @@ public class PeerProcess {
         me.optUnchokeTimer.schedule(new ChokeTimerTask(me, ChokeTimerTask.OPTIMISTICALLY_UNCHOKED), 0, commonInfo.optUnchokeInterval() );
         me.prefUnchokeTimer.schedule(new ChokeTimerTask(me, ChokeTimerTask.PREFERRED), 0, commonInfo.optUnchokeInterval() );
 
+        LinkedBlockingQueue<Message> curr_peer_messages;
+        int curr_peer;
         while(!me.all_downloaded) {
 
             if( !me.file_downloaded ) {
+                //Go through all peers' queues
+                for( HashMap.Entry<Integer, LinkedBlockingQueue<Message> > entry : me.receivedMessageQueues.entrySet() ) {
+                    curr_peer = entry.getKey();
+                    curr_peer_messages = entry.getValue();
+
+                    //gets all messages from the peer's queue
+                    while( !curr_peer_messages.isEmpty() ) {
+                        InputHandler.handle_input(me, curr_peer_messages.poll(), curr_peer);
+                    }
+                }
+
+                //Take initiative for sending messages needed
 
             }
             else {
+                //What to do when I have full file?
 
             }
         }

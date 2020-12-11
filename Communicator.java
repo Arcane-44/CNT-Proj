@@ -101,9 +101,11 @@ public class Communicator extends Connector{
 
         //Complete handshake
 
+
         //send bitfield message directly after handshake protocol
 
-        //make communicator usable after handshake protocol complete
+
+        //make communicator usable after handshake protocol complete (maybe)
         usable = true;
     }
 }
