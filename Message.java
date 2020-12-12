@@ -47,10 +47,24 @@ public class Message {
     }
 
     public static int isHandshake(byte[] msg) {
-      if(msg.length == 32){
-        return 1;
-      }
-      return 0;
+        byte[] buffer = new byte[18];
+        byte[] id_buffer = new byte[4];
+        String header;
+        if(msg.length == 32){
+            System.arraycopy(msg, 0, buffer, 0, 18);
+            header = new String(buffer);
+
+            if( header.equals("P2PFILESHARINGPROJ") ) {
+                for(int i = 0; i < 10; ++i) {
+                    if( msg[18 + i] != 0 )
+                        return -1;
+                }
+                System.arraycopy(msg, 27, id_buffer, 0, 4);
+
+                return Message.bytesToInt(id_buffer);
+            }
+        }
+        return -1;
     }
 
     public Message(byte[] msg) {
