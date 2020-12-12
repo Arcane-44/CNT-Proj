@@ -128,7 +128,7 @@ public class PeerProcess {
     public BitSet peerHas(int i) { return peerHas.get(Integer.valueOf(i)); }
     public BitSet amInterested(int i) {
         //Copy peer's bitfield
-        BitSet ret = peerHas(i);
+        BitSet ret = (BitSet) peerHas(i).clone();
         //get rid of any that I already have
         ret.andNot(peerHas(myID));
         return ret;
@@ -136,6 +136,13 @@ public class PeerProcess {
     public void send_have(int piece_ind) {
         for(int id : peerIDs) {
             getComm(id).send_message(Message.have(piece_ind));
+        }
+    }
+    public void check_interest() {
+        for(int id : peerIDs) {
+            if(!amInterested(id).isEmpty()) {
+                getComm(id).send_message(Message.interested());
+            }
         }
     }
 

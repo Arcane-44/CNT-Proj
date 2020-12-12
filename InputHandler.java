@@ -44,6 +44,10 @@ public final class InputHandler {
 
         proc.peerHas(peerID).clear();
         proc.peerHas(peerID).or(bits);
+
+        if(!proc.amInterested(peerID).isEmpty()) {
+            proc.getComm(peerID).send_message(Message.interested());
+        }
     }
 
     private static void handle_request(PeerProcess proc, Message msg, int peerID) {
@@ -79,6 +83,9 @@ public final class InputHandler {
             proc.set_downloaded();
             proc.getLogger().log_complete_download();
         }
+
+        //check interest and send interest messages
+        proc.check_interest();
     }
 
     //Only public method.
