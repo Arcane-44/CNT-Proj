@@ -73,7 +73,7 @@ public class Communicator extends Connector{
     private Message_Sender sender;
     private LinkedBlockingQueue<Message> received_message_queue;
     private BitSet myBitfield;
-
+    private P2PLogger logger;
 
     private boolean usable = false;
     public boolean usable() { return usable; }
@@ -82,9 +82,16 @@ public class Communicator extends Connector{
         super(myID, proc.getHost( myID ), proc.getPort(myID), target_peer, proc.getHost(target_peer), proc.getPort(target_peer) );
         this.received_message_queue = proc.getMessageQueue(target_peer);
         myBitfield = proc.peerHas( myID() );
+        logger = proc.getLogger();
     }
 
-    public void send_message(byte[] msg) { if(usable) { sender.add_message(msg); } }
+    public void send_message(byte[] msg) {
+        if(usable) {
+            sender.add_message(msg);
+        } else {
+            //CANNOT SEND MESSAGE BECAUSE COMMUNICATOR IS NOT YET USABLE
+        } 
+    }
 
     private void handshake_and_bitfield() {
         Message msg;
@@ -104,7 +111,7 @@ public class Communicator extends Connector{
                 shaken = true;
             }
             else if(shaker != -1) {
-                //ERROR
+                //NOT A HANDSHAKE
             }
             else {
                 //SOMETHING WENT VERY WRONG
@@ -133,9 +140,21 @@ public class Communicator extends Connector{
         //Do task for Connector
         super.run();
 
+        //After running super, TCP connection has been made
+        if(is_up()) {
+            logger.log_tcp_up( targetID() );
+        }
+        else {
+            logger.log_tcp_up( targetID() );
+        }
+
         //Make reader and sender objects
         reader = new Message_Reader(get_in(), received_message_queue);
         sender = new Message_Sender(get_out());
+
+        //Start the messenger threads so reading and sending of messages can be accomplished
+        reader.start();
+        sender.start();
 
         //Complete handshake and bitfield protocol
         handshake_and_bitfield();

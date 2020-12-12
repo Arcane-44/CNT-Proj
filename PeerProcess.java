@@ -1,13 +1,52 @@
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.io.*;
 import java.net.*;
 import java.lang.Integer;
 import java.lang.Math;
-//import PeerInfo;                                     //IDK how importing local files works
 
 
 public class PeerProcess {
+    public class AverageMaintainer implements Comparable<AverageMaintainer> {
+        int peerID;
+
+        private long num_entries = 0;
+        private long sum_entries = 0;
+
+        public AverageMaintainer(int peerID) {
+            this.peerID = peerID;
+        }
+
+        public int get_id() { return peerID; }
+
+        public double get_average() {
+            if(num_entries == 0) {
+                return Double.MAX_VALUE;
+            }
+            return ( (double) num_entries ) / sum_entries;
+        }
+
+        public void add_entry(long entry) {
+            num_entries += 1;
+            sum_entries += entry;
+        }
+
+        @Override
+        public int compareTo(AverageMaintainer other) {
+            double me = get_average();
+            double other_avg = other.get_average();
+            
+            if( me > other_avg )
+                return 1;
+            else if( me < other_avg )
+                return -1;
+            return 0;
+        }
+    }
+
+    public static final Boolean FALSE = Boolean.valueOf(false);
+    public static final Boolean TRUE = Boolean.valueOf(true);
 
     /**************************** WORKING DIRECTORY (very important) ****************************/
     private static String workingDir;
@@ -17,10 +56,12 @@ public class PeerProcess {
     private static String fileName = "";
     private static String pieceFileName = "";
 
+    //RNG
+    private Random rand = ThreadLocalRandom.current();
+
     //track if file downloaded by peers
     private boolean file_downloaded;
     private boolean all_downloaded = false;
-    private int all_pieces;
 
     //Peer ID of machine running this peer process
     private int myID;
@@ -36,8 +77,38 @@ public class PeerProcess {
 
     //maps peerIDs to boolean representing whether they are choking this process.
     private HashMap<Integer, Boolean> unchokedByMap = new HashMap<>();
+    public boolean isUnchokedBy(int id) { return unchokedByMap.get(Integer.valueOf(id)); }
+
+    //functions/variables for storing preferred/optimistic neighbors
     private HashMap<Integer, Boolean> preferredNeighborMap = new HashMap<>();
+    public boolean isPreferred(int id) { return preferredNeighborMap.get(Integer.valueOf(id)); }
     private int optUnchokedNeighborID;
+
+    //Keep track of data rates and if I am waiting on neighbor
+    private HashMap<Integer, Long> waiting = new HashMap<>();
+    public long waitingOn(int i) {
+        Integer i_Integer = Integer.valueOf(i);
+        if( waiting.get(i_Integer) != null ) {
+            return waiting.get(i_Integer);
+        }
+        else {
+            return -1;
+        }
+    }
+    public void startWaiting(int i) { waiting.put(Integer.valueOf(i), System.currentTimeMillis()); }
+    public void stopWaiting(int i) {
+        long wait_start = waitingOn(i);
+        if(wait_start >= 0) {
+            addTime(i, (System.currentTimeMillis() - wait_start) );
+            waiting.remove(Integer.valueOf(i));
+        }
+    }
+
+    private HashMap<Integer, AverageMaintainer> avgTracker = new HashMap<>();
+    private ArrayList<AverageMaintainer> maintainerList = new ArrayList<>();
+    public AverageMaintainer getAverageMaintainer(int i) { return avgTracker.get(Integer.valueOf(i)); }
+    public double avgDataRate(int i) { return getAverageMaintainer(i).get_average(); }
+    public void addTime(int peer, long timeEntry) { getAverageMaintainer(peer).add_entry(timeEntry); }
 
     //Timers for regularly updating neighbors
     private Timer optUnchokeTimer = new Timer();
@@ -50,6 +121,13 @@ public class PeerProcess {
     //stores the bitfields of peers (and self)
     private HashMap<Integer, BitSet> peerHas = new HashMap<>();
     public BitSet peerHas(int i) { return peerHas.get(Integer.valueOf(i)); }
+    public BitSet amInterested(int i) {
+        //Copy peer's bitfield
+        BitSet ret = peerHas(i);
+        //get rid of any that I already have
+        ret.andNot(peerHas(myID));
+        return ret;
+    }
 
     //stores ports for peers
     private HashMap<Integer, Integer> peerPort = new HashMap<>();
@@ -67,7 +145,8 @@ public class PeerProcess {
     private HashMap<Integer, Communicator> communicators = new HashMap<>();
     public Communicator getComm(int i) { return communicators.get( Integer.valueOf(i) ); }
 
-    P2PLogger logger;
+    private P2PLogger logger;
+    public P2PLogger getLogger() { return logger; }
 
     private byte[] getPiece(int index) {
         byte[] ret = null;
@@ -88,32 +167,41 @@ public class PeerProcess {
     private void readPeerInfo() {
 
         boolean validID = false;
+        int curr_id;
+        Integer curr_id_Integer;
+        AverageMaintainer curr_maintainer;
         //Initialize chokeList, wantMe, peerHas by iterating through peers
         for( PeerInfo peer : peerInfo ) {
-            if( myID != peer.peerID() ) {
-                unchokedByMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(false) );    //initially choked by all peers
-                preferredNeighborMap.put( Integer.valueOf(peer.peerID()), Boolean.valueOf(false) );    //initial preferred neighbors not set
-                wantMe.put( Integer.valueOf(peer.peerID()) , Boolean.valueOf(false) );    //initially unwanted by all peers
+            curr_id = peer.peerID();
+            curr_id_Integer = Integer.valueOf(curr_id);
+
+            if( myID != curr_id ) {
+                curr_maintainer = new AverageMaintainer(curr_id);
+                avgTracker.put(curr_id_Integer, curr_maintainer );
+                maintainerList.add(curr_maintainer);
+                unchokedByMap.put( curr_id_Integer, FALSE );            //initially choked by all peers
+                preferredNeighborMap.put( curr_id_Integer, FALSE );     //initial preferred neighbors not set
+                wantMe.put( curr_id_Integer , FALSE );                  //initially unwanted by all peers
             }
             else {
                 validID = true;
             }
 
-            peerHas.put( Integer.valueOf(peer.peerID()) , new BitSet(commonInfo.numPieces()) );
+            peerHas.put( curr_id_Integer , new BitSet(commonInfo.numPieces()) );
             if( peer.hasFile() ) {
-                peerHas(peer.peerID()).set(0, commonInfo.numPieces());
+                //Set all bits in my bitfield and set downloaded flag
+                peerHas(curr_id).set(0, commonInfo.numPieces());
                 file_downloaded = true;
             }
             else {
+                //clear all bits in my bitfield and unset downloaded flag
                 peerHas(peer.peerID()).clear();
                 file_downloaded = false;
             }
 
-            peerPort.put( Integer.valueOf(peer.peerID()), Integer.valueOf(peer.port()) );
-
-            peerHost.put( Integer.valueOf(peer.peerID() ), peer.hostName() );
-
-            peerIDs.add( Integer.valueOf(peer.peerID() ) );
+            peerPort.put( curr_id_Integer, Integer.valueOf(peer.port()) );
+            peerHost.put( curr_id_Integer, peer.hostName() );
+            peerIDs .add( curr_id );
 
         }
 
@@ -152,11 +240,13 @@ public class PeerProcess {
     };
 
     private void shutdown() {
+        //shutdown all peer communicators
         for( Integer id : peerIDs ) {
             if( id.intValue() != myID )
                 communicators.get(id).shutdown();
         }
 
+        //cancel timers
         optUnchokeTimer.cancel();
         prefUnchokeTimer.cancel();
     }
@@ -188,18 +278,44 @@ public class PeerProcess {
 
 
     public void updatePreferredNeighbors() {
+        ArrayList<Integer> newPrefNeighbors = new ArrayList<>(commonInfo.numPrefNeighbors());
+
         //Select preferred neighbors randomly if I have the entire file
         if(file_downloaded) {
-
+            Collections.shuffle(peerIDs);
+            for(int i = 0; i < commonInfo.numPrefNeighbors(); ++i) {
+                newPrefNeighbors.add(peerIDs.get(i));
+            }
         } 
         //Otherwise choose preferred neighbors based on fastest data rates
         else {
-
+            Collections.shuffle(maintainerList);
+            Collections.sort(maintainerList);
+            for(int i = 0; i < commonInfo.numPrefNeighbors(); ++i) {
+                newPrefNeighbors.add(maintainerList.get(i).get_id());
+            }
         }
+
+        //After updating new values, log it
+        logger.log_preferred_neighbors(myID, newPrefNeighbors);
     }
 
     public void updateOptNeighbor() {
+        ArrayList<Integer> interested_choked_peers = new ArrayList<>();
+        int rand_index;
+
+        for(int id : peerIDs) {
+            if( wantsMe(id) ) {
+                interested_choked_peers.add(id);
+            }
+        }
+
         //Choose randomly from interested choked peers
+        rand_index = rand.nextInt(interested_choked_peers.size());
+        optUnchokedNeighborID = interested_choked_peers.get(rand_index);
+
+        //After updating value, log
+        logger.log_opt_unchoked(optUnchokedNeighborID);
     }
 
     
@@ -236,6 +352,7 @@ public class PeerProcess {
 
         LinkedBlockingQueue<Message> curr_peer_messages;
         int curr_peer;
+        Integer id_Integer;
         while(!me.all_downloaded) {
             //Check messages regardless of if I have the file
             for( HashMap.Entry<Integer, LinkedBlockingQueue<Message> > entry : me.receivedMessageQueues.entrySet() ) {
@@ -249,7 +366,28 @@ public class PeerProcess {
             }
 
             if( !me.file_downloaded ) {
+                BitSet interesting_pieces;
+                int rand_index;
+                int actual_index;
+
                 //Request pieces from interesting peers that are not choking me
+                for(int id : me.peerIDs) {
+                    interesting_pieces = me.amInterested(id);
+
+                    //only request if I am unchoked by and interested in that peer; otherwise, move on.
+                    if( (me.waitingOn(id) < 0) && me.isUnchokedBy(id) && !interesting_pieces.isEmpty() ) {
+                        /*  Choose piece to request
+                            get random index and get next set bit in bitfield if there is one; otherwise, get previous set bit in bitfield
+                            this randomly chosen index allows us to randomly find an interesting piece to request from peer.
+                        */
+                        rand_index = me.rand.nextInt(commonInfo.numPieces());
+                        actual_index = interesting_pieces.nextSetBit(rand_index) < 0 ? interesting_pieces.previousSetBit(rand_index) : interesting_pieces.nextSetBit(rand_index);
+
+                        //request piece with randomly determined index
+                        me.getComm(id).send_message(Message.request(actual_index));
+                        me.getAverageMaintainer(id).add_entry(System.currentTimeMillis());
+                    }
+                }
             }
             else {
                 //What to do when I have full file?

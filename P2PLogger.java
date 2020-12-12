@@ -55,7 +55,7 @@ public class P2PLogger {
 
     }
 
-    public void log_choke(int myID, int peerID) {
+    public void log_choke(int peerID) {
       logger.info(": Peer " + this.myID + " is choked by " + peerID + "\n");
 
     }
@@ -78,7 +78,7 @@ public class P2PLogger {
       logger.info(": Peer " + this.myID + " has downloaded the piece " + pieceIndex + " from " + peerID + "\n");
     }
 
-    public void log_complete_download(int myID, int completeDownloadPeerID) {
+    public void log_complete_download(int completeDownloadPeerID) {
       logger.info(": Peer " + this.myID + " has downloaded the complete file with id" + completeDownloadPeerID + "\n");
 
     }

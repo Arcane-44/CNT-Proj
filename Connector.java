@@ -102,11 +102,9 @@ public class Connector extends Thread {
         //At the end of running, should be connected and should log that TCP connection has been made
         if(is_up) {
             connect_up();
-            P2PLogger.log_tcp_up(myID, targetID);
         }
         else {
             connect_down();
-            P2PLogger.log_tcp_down(myID, targetID);
         }
 
         connected = true;
