@@ -26,7 +26,7 @@ public class Message {
     public byte[] getPayload(){ return this.payload; }
     public void setPayload(byte[] payload){ this.payload=payload; }
 
-    private static int bytesToInt(byte[] bytes) {
+    public static int bytesToInt(byte[] bytes) {
         if(bytes.length != 4) {
             //ERROR
         }

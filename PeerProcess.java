@@ -61,6 +61,7 @@ public class PeerProcess {
 
     //track if file downloaded by peers
     private boolean file_downloaded;
+    public void set_downloaded() { file_downloaded = true; }
     private boolean all_downloaded = false;
 
     //Peer ID of machine running this peer process
@@ -70,6 +71,7 @@ public class PeerProcess {
 
     //stores info from common info file
     private static CommonInfo commonInfo = new CommonInfo(commonInfoFileName);                       //I think this is correct
+    public static CommonInfo getCommonInfo() { return commonInfo; }
 
     //Stores messages from different peers in their respective queues.
     private HashMap<Integer, LinkedBlockingQueue<Message>> receivedMessageQueues;
@@ -78,11 +80,13 @@ public class PeerProcess {
     //maps peerIDs to boolean representing whether they are choking this process.
     private HashMap<Integer, Boolean> unchokedByMap = new HashMap<>();
     public boolean isUnchokedBy(int id) { return unchokedByMap.get(Integer.valueOf(id)); }
+    public void set_unchoked_by(int id, boolean b) { unchokedByMap.put(Integer.valueOf(id), Boolean.valueOf(b)); }
 
     //functions/variables for storing preferred/optimistic neighbors
     private HashMap<Integer, Boolean> preferredNeighborMap = new HashMap<>();
     public boolean isPreferred(int id) { return preferredNeighborMap.get(Integer.valueOf(id)); }
     private int optUnchokedNeighborID;
+    public int getOptUnchokedID() { return optUnchokedNeighborID; }
 
     //Keep track of data rates and if I am waiting on neighbor
     private HashMap<Integer, Long> waiting = new HashMap<>();
@@ -96,9 +100,9 @@ public class PeerProcess {
         }
     }
     public void startWaiting(int i) { waiting.put(Integer.valueOf(i), System.currentTimeMillis()); }
-    public void stopWaiting(int i) {
+    public void stopWaiting(int i, boolean from_choke) {
         long wait_start = waitingOn(i);
-        if(wait_start >= 0) {
+        if(!from_choke && (wait_start >= 0) ) {
             addTime(i, (System.currentTimeMillis() - wait_start) );
             waiting.remove(Integer.valueOf(i));
         }
@@ -117,6 +121,7 @@ public class PeerProcess {
     //maps peerIDs to boolean representing whether the corresponding peer is interested.
     private HashMap<Integer, Boolean> wantMe = new HashMap<>();
     public boolean wantsMe(int i) { return wantMe.get(Integer.valueOf(i)); }
+    public void setWantsMe(int i, boolean b) { wantMe.put(Integer.valueOf(i), Boolean.valueOf(b)); } 
 
     //stores the bitfields of peers (and self)
     private HashMap<Integer, BitSet> peerHas = new HashMap<>();
@@ -127,6 +132,11 @@ public class PeerProcess {
         //get rid of any that I already have
         ret.andNot(peerHas(myID));
         return ret;
+    }
+    public void send_have(int piece_ind) {
+        for(int id : peerIDs) {
+            getComm(id).send_message(Message.have(piece_ind));
+        }
     }
 
     //stores ports for peers
@@ -148,7 +158,7 @@ public class PeerProcess {
     private P2PLogger logger;
     public P2PLogger getLogger() { return logger; }
 
-    private byte[] getPiece(int index) {
+    public byte[] getPiece(int index) {
         byte[] ret = null;
         try{
             ret = new byte[commonInfo.pieceSize()];
@@ -161,6 +171,17 @@ public class PeerProcess {
         }
 
         return ret;
+    }
+
+    public void writePiece(int index, byte[] data) {
+        try {
+            FileOutputStream out = new FileOutputStream(pieceFileName + index);
+            out.write(data);
+            out.close();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**************** Files and initialization ******************/
@@ -352,7 +373,6 @@ public class PeerProcess {
 
         LinkedBlockingQueue<Message> curr_peer_messages;
         int curr_peer;
-        Integer id_Integer;
         while(!me.all_downloaded) {
             //Check messages regardless of if I have the file
             for( HashMap.Entry<Integer, LinkedBlockingQueue<Message> > entry : me.receivedMessageQueues.entrySet() ) {
@@ -385,7 +405,7 @@ public class PeerProcess {
 
                         //request piece with randomly determined index
                         me.getComm(id).send_message(Message.request(actual_index));
-                        me.getAverageMaintainer(id).add_entry(System.currentTimeMillis());
+                        me.startWaiting(id);
                     }
                 }
             }

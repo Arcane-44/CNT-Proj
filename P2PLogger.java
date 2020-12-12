@@ -78,8 +78,8 @@ public class P2PLogger {
       logger.info(": Peer " + this.myID + " has downloaded the piece " + pieceIndex + " from " + peerID + "\n");
     }
 
-    public void log_complete_download(int completeDownloadPeerID) {
-      logger.info(": Peer " + this.myID + " has downloaded the complete file with id" + completeDownloadPeerID + "\n");
+    public void log_complete_download() {
+      logger.info(": Peer " + this.myID + " has downloaded the complete file." + "\n");
 
     }
 
