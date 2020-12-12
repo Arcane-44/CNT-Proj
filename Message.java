@@ -3,7 +3,7 @@ import java.lang.*;
 import java.util.Arrays;
 
 public class Message {
-    
+
     public static final byte CHOKE = 0;
     public static final byte UNCHOKE = 1;
     public static final byte INTERESTED = 2;
@@ -46,8 +46,10 @@ public class Message {
     }
 
     public static int isHandshake(byte[] msg) {
-        //
-        return -1;
+      if(msg.length == 32){
+        return 1;
+      }
+      return 0;
     }
 
     public Message(byte[] msg) {
